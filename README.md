@@ -80,4 +80,15 @@ The approach — a boot file, an index, memory loaded on demand — I learned by
 
 ## Licence
 
-MIT. Take it, change it, use it for whatever you like.
+**PolyForm Noncommercial 1.0.0** — free for any noncommercial purpose.
+
+In plain terms:
+
+- **Use it.** For yourself, your studies, your hobby projects, your own work. Free, forever, no strings.
+- **Change it.** Rewrite any of it. That's the point — your assistant should end up nothing like mine.
+- **Share it.** Pass it on, fork it, post your version. Just keep the licence with it.
+- **Don't sell it.** Not as a product, not as a paid course, not repackaged. That's the one line.
+
+This was given away on purpose. The only thing being asked in return is that nobody takes it wholesale and puts a price tag on it.
+
+Full text in [LICENSE](LICENSE).
