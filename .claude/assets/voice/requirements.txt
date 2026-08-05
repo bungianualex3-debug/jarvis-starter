@@ -1,0 +1,7 @@
+faster-whisper
+sounddevice
+numpy
+piper-tts
+pyttsx3
+pynput
+claude-agent-sdk

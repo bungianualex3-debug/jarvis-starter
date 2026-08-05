@@ -1,0 +1,35 @@
+{
+  "_comment": "Written by /jarvis-voice from the interview and from what this machine can actually run. Change a value, save, restart the voice.",
+
+  "_names": "Both of these are read by main.py for the spoken greeting. Leave them empty and it introduces itself as 'Hey there, Assistant is online' — which is the first thing anyone hears, and it undoes the whole point of a vault that already knows who they are. Fill them from the vault, never ask.",
+  "assistant_name": "",
+  "owner_name": "",
+
+  "reply_language": "",
+
+  "allow_inherited_boot": false,
+
+  "ptt": { "key": "right_ctrl" },
+
+  "stt": {
+    "model": "small",
+    "device": "cpu",
+    "compute_type": "int8"
+  },
+
+  "tts": {
+    "engine": "piper",
+    "piper_model": "voices/en_GB-alan-medium.onnx",
+    "fallback": "sapi"
+  },
+
+  "brain": {
+    "model": "",
+    "timeout_seconds": 120
+  },
+
+  "face": {
+    "port": 8781,
+    "web_dir": ""
+  }
+}
