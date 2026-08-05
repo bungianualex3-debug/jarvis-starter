@@ -86,6 +86,25 @@ The old rule picked `medium` *because* the machine had a good card, then ran it 
 
 Whatever you choose, tell them the two lines in `voice/config.json` that change it (`"model"` and `"device"`), so it's theirs to adjust.
 
+### The same question again for the speaking voice
+
+There are two speaking engines, and the machine decides which one is on the table:
+
+| | Piper | Kokoro |
+|---|---|---|
+| Runs on | anything | a working NVIDIA card only |
+| Sounds | good | noticeably better, warmer |
+| Costs | one 60 MB file | a ~3 GB torch install |
+| Languages | many, including Romanian | **English only** |
+
+**Kokoro is only offered if the CUDA test above actually passed.** Not if a card is merely present — the same test, the same fact. On a processor Kokoro takes longer to make a sentence than the sentence takes to say, so the assistant sounds like it is struggling. That is worse than the Piper voice, not better, and it is exactly the "this is fake" reaction the whole install is trying to avoid.
+
+**If it passed, offer it — and say the trade in one plain sentence:** a better voice, a big one-time download, English only.
+
+**English only is not a footnote.** If their language isn't English and they choose Kokoro, they are choosing an assistant they write and speak to in their own language that answers in English — which works, because the thinking model reads every language natively and there is no translation step anywhere. Say that in those words before they choose, not after. Someone who picks it knowingly is fine. Someone who discovers it thinks it's broken.
+
+**Install a Piper voice either way.** It is 60 MB against a 3 GB install that depends on a graphics driver, and it means a driver that breaks next month leaves them with a plainer voice instead of a mute assistant. `mouth.py` drops to it on its own.
+
 ---
 
 ## Stage 3 — Two questions, one at a time
@@ -100,9 +119,21 @@ Whatever you choose, tell them the two lines in `voice/config.json` that change 
    | `en_US-ryan-medium` | American man, warmer | good default anywhere |
    | `en_US-ryan-high` | the same man, noticeably better | heavier — only offer on a strong machine |
    | `en_US-amy-medium` | American woman | |
-   | `ro_RO-mihai-medium` | Romanian man | the only Romanian voice there is |
+   | `ro_RO-mihai-medium` | Romanian man | the only Romanian voice Piper ships, and it's rough |
+
+   **And on a machine that passed the CUDA test, the Kokoro voices as well** — write `"engine": "kokoro"` and one of these into `kokoro_voice`. They are English only:
+
+   | Voice | Sounds like |
+   |---|---|
+   | `bm_lewis` | British man, dry and even |
+   | `bm_george` | British man, lighter |
+   | `am_michael` | American man, warm |
+   | `af_heart` | American woman, bright |
+   | `af_bella` | American woman, softer |
 
    If their language has no voice in this list, say so plainly rather than giving them an English voice reading their language without warning — that sounds broken, and they'll blame the whole thing.
+
+   **Romanian is the honest example of this.** The one Piper Romanian voice is noticeably worse than the English ones — that is the state of free offline Romanian speech, not a bug in this install. Auditioned on 2026-08-05, `mihai` and all three community alternatives were rejected as unusable. So for a Romanian speaker, say both options out loud: a Romanian voice that sounds rough, or a good English voice they can still talk and type Romanian at. Let them pick. Don't quietly decide for them, and don't pretend the Romanian one is fine.
 
 Then build it. No confirmation step.
 
@@ -114,6 +145,10 @@ Everything goes in a **`voice` folder inside the vault**. Nothing is installed s
 
 1. **Copy** every file from `.claude/assets/voice/` into `voice/`.
 2. **Make a virtual environment** inside it (`python -m venv .venv`) and install `requirements.txt` into it. Say up front this takes a few minutes and downloads a few hundred megabytes — silence during a long download reads as a hang.
+
+   **Only if they chose Kokoro**, install `requirements-kokoro.txt` into the *same* `.venv` afterwards. Warn them first: this one is around 3 GB and can take a long while on a slow line. If it fails, don't fight it — set `"engine": "piper"` in the config, say plainly that the better voice didn't install and the good one did, and carry on. A half-finished torch install is not worth stalling the whole build over.
+
+   Kokoro fetches its own voice model the first time it speaks, so the first sentence after a Kokoro install is slow once and never again. Tell them, or it reads as a hang.
 3. **Write `voice/config.json`** from `config.template.json`: their language, their key, the model tier you chose in Stage 2, and the voice they picked.
 4. **Download the voice** into `voice/voices/` — two files per voice, the model and its `.json`:
 
@@ -193,6 +228,10 @@ If nothing is heard: microphone permission first (Windows: Settings → Privacy 
 
 Add to `VAULT-INDEX.md`: that the voice lives in `voice/`, which key talks to it, which voice it uses, and that `config.json` is where all of that changes. A couple of sentences. No new note — the index is the home.
 
+**If they chose Kokoro and their language isn't English, amend the language rule in `CLAUDE.md` too** — one line, in their words: *they write and speak in their own language; the assistant answers in English; notes in the vault stay in their language.* That split is the proven arrangement, not a compromise — the spoken reply and the caption are the same text, so a reply in a language the voice can't pronounce is the one combination that actually breaks.
+
+Leave that rule alone for anyone on Piper. They picked a voice that speaks their language; don't take it off them.
+
 Then stop.
 
 ---
@@ -208,7 +247,7 @@ Hearing it answer feels like the end. It isn't. **Check all six by actually look
 5. They have **interrupted it mid-sentence** at least once.
 
 *(4 and 5 are for the person installing it on their own machine. If you are testing a build whose voice path you have already proven on this same code, don't make them do it again — re-running a passed check to tick your own box wastes their time and is its own kind of dishonesty.)*
-6. `VAULT-INDEX.md` mentions the voice, the key and where to change it.
+6. `VAULT-INDEX.md` mentions the voice, the key and where to change it. **If they took Kokoro, it also says the assistant answers in English whatever language they use** — that is a design choice they agreed to, and it has to be written down or it becomes a mystery later.
 7. **The face is LIVE, not in demo mode.** Ask them to look at the corner: if it still says `demo mode` while the voice is running, the Stage 5 wiring didn't take and the interface is animating to nothing. Check `voice/.bus/face.url` exists and that the browser's address starts with `http://127.0.0.1`, not `file:///`.
 
 **2, 3, 6 and 7 are the ones that go missing** — every one of them has been skipped in a real run, and every one of them still leaves an assistant that talks. That's exactly why they need looking at rather than remembering.

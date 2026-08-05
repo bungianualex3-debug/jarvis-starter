@@ -1,0 +1,18 @@
+# The better voice — ONLY for machines whose graphics card tested clean.
+# Install on top of requirements.txt, into the same .venv:
+#
+#     .venv\Scripts\pip install -r requirements-kokoro.txt
+#
+# This is a ~3 GB download and it takes a while. Say so before starting it.
+# Never install this on a machine without a working NVIDIA card: on a processor
+# Kokoro synthesises far slower than the speech it is producing, which is a
+# worse assistant than the Piper voice, not a better one.
+#
+# The version below is the exact build proven on an RTX 3070 / CUDA 12.4.
+# Nothing else is needed — the speech engine ships inside the package, so there
+# is no system install of espeak-ng to chase.
+
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0+cu124
+kokoro==0.9.4
+soundfile

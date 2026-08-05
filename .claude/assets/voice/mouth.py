@@ -1,7 +1,17 @@
 """Mouth — text to speech, a sentence at a time, cancellable mid-word.
 
-Primary: Piper (a real neural voice, offline, free). Fallback: Windows SAPI via
-pyttsx3, so the assistant can always speak even if the Piper model is missing.
+Three rungs, best first, each one catching the one above it:
+
+    Kokoro (only on a machine with a working graphics card)
+      -> Piper (a real neural voice, offline, free — the floor everywhere)
+        -> Windows SAPI via pyttsx3, so it can always speak somehow.
+
+Kokoro runs INSIDE this process rather than as a separate server. That is
+deliberate: no second thing to start, no port to collide with whatever else is
+already listening on this machine, and nothing extra for the launcher to wait
+for. It costs a torch install, which is why it is only offered to machines that
+tested clean on CUDA — on a processor it is roughly ten times slower than the
+speech is long, which is worse than no Kokoro at all.
 
 CRITICAL pipeline shape: synthesis and playback are a TWO-STAGE pipeline with
 two queues, so the NEXT sentence is being made into audio while the current one
@@ -35,6 +45,7 @@ import signals
 
 PLAY_BLOCK = 1024          # frames per write; small enough to cut in ~50ms
 DRAIN_GRACE = 0.35         # keep the output device open this long between runs
+KOKORO_RATE = 24000        # kokoro always returns 24 kHz mono float
 
 _STOP = object()
 
@@ -48,6 +59,16 @@ class Mouth:
         self.use_piper = self.piper_exe.exists() and self.model.exists()
         self._sapi = None
 
+        # Kokoro is opt-in from config and is loaded lazily on its own thread,
+        # so a slow first model load overlaps the rest of the startup instead
+        # of standing in front of it.
+        self.kokoro_voice = tts.get("kokoro_voice", "bm_lewis")
+        self.kokoro_device = tts.get("kokoro_device", "cuda")
+        self.use_kokoro = (tts.get("engine") or "piper").strip().lower() == "kokoro"
+        self._kokoro = None
+        self._kokoro_lock = threading.Lock()
+        self._kokoro_failed = False
+
         self._synth_q: queue.Queue = queue.Queue()
         self._play_q: queue.Queue = queue.Queue()
         self._generation = 0
@@ -59,7 +80,11 @@ class Mouth:
         self._stream_lock = threading.Lock()
         self._closed = False
 
-        if self.use_piper:
+        if self.use_kokoro:
+            print(f"[mouth] Kokoro voice: {self.kokoro_voice} on {self.kokoro_device}")
+            threading.Thread(target=self._load_kokoro, daemon=True,
+                             name="mouth-warm").start()
+        elif self.use_piper:
             print(f"[mouth] Piper voice: {self.model.name}")
         else:
             print("[mouth] Piper voice not found — falling back to system voice.")
@@ -113,7 +138,7 @@ class Mouth:
             time.sleep(0.02)
 
     def healthy(self) -> bool:
-        return self.use_piper or self._sapi is not None
+        return self.use_kokoro or self.use_piper or self._sapi is not None
 
     def close(self) -> None:
         self._closed = True
@@ -143,6 +168,27 @@ class Mouth:
         except queue.Empty:
             pass
 
+    def _load_kokoro(self):
+        """Build the Kokoro pipeline once. Both the warm-up thread and the
+        synth thread come through here, so the lock is what stops the first
+        sentence ever seeing a half-built model."""
+        with self._kokoro_lock:
+            if self._kokoro is not None or self._kokoro_failed:
+                return self._kokoro
+            try:
+                from kokoro import KPipeline
+                # the voice name's first letter IS its language: 'b' British,
+                # 'a' American. Handing the pipeline the wrong one mispronounces
+                # everything while looking like it worked.
+                lang = "b" if self.kokoro_voice.startswith("b") else "a"
+                self._kokoro = KPipeline(lang_code=lang, device=self.kokoro_device)
+                print("[mouth] Kokoro ready.")
+            except Exception as e:
+                print(f"[mouth] Kokoro unavailable ({e}) — using the Piper voice.")
+                self._kokoro_failed = True
+                self.use_kokoro = False
+            return self._kokoro
+
     def _init_sapi(self):
         try:
             import pyttsx3
@@ -165,7 +211,8 @@ class Mouth:
             try:
                 audio, rate = self._synthesize(text)
             except Exception as e:
-                print(f"[mouth] Piper failed ({e}); using system voice.")
+                print(f"[mouth] voice failed ({e}); using system voice.")
+                self.use_kokoro = False
                 self.use_piper = False
                 self._init_sapi()
                 audio, rate = None, 0
@@ -178,8 +225,36 @@ class Mouth:
             # the exact moment this sentence starts sounding, not before
             self._play_q.put((gen, audio, rate, text))
 
+    def _synth_kokoro(self, text: str):
+        """Kokoro yields float chunks; we join them and convert once."""
+        pipe = self._load_kokoro()
+        if pipe is None:
+            return None, 0
+        chunks = []
+        for result in pipe(text, voice=self.kokoro_voice, speed=1.0):
+            audio = getattr(result, "audio", None)
+            if audio is None:
+                continue
+            if hasattr(audio, "detach"):
+                audio = audio.detach().cpu().numpy()
+            chunks.append(np.asarray(audio, dtype="float32").reshape(-1))
+        if not chunks:
+            return None, 0
+        wav = np.clip(np.concatenate(chunks), -1.0, 1.0)
+        return (wav * 32767.0).astype(np.int16), KOKORO_RATE
+
     def _synthesize(self, text: str):
         """The one seam for the voice backend. Piper writes a wav; we read it."""
+        if self.use_kokoro:
+            try:
+                audio, rate = self._synth_kokoro(text)
+                if audio is not None and audio.size:
+                    return audio, rate
+            except Exception as e:
+                print(f"[mouth] Kokoro failed ({e}) — dropping to the Piper voice.")
+            # demote once, rather than paying the same failure every sentence
+            self.use_kokoro = False
+
         if not self.use_piper:
             return None, 0
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tf:
