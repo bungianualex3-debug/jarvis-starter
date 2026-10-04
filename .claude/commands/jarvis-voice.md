@@ -248,6 +248,17 @@ If nothing is heard: microphone permission first (Windows: Settings → Privacy 
 
 Add to `VAULT-INDEX.md`: that the voice lives in `voice/`, which key talks to it, which voice it uses, and that `config.json` is where all of that changes. A couple of sentences. No new note — the index is the home.
 
+### Teach yourself to use the panel
+
+The panel is live now: the same small server that feeds the face also reads the vault for it. Two of its parts only fill when *you* do something, and a future session of you will not know that unless it is written down. **Add this to `CLAUDE.md`, as a short section of its own, in their language** (use `python3`, or `voice/.venv/bin/python`, on a Mac):
+
+- **Today's goal.** When they say what today is about, run `python voice/panel.py goal "…"`. When it's finished — or when the panel sends "today's goal is done" — run `python voice/panel.py goal --done`.
+- **The stage.** When you make something worth looking at — a plan, a draft, a comparison, a page, an image — put it on the stage rather than only describing it: `python voice/panel.py show text|list|page|image "Title" <file or text>`. Someone with one screen cannot see a file you only mention.
+- **Remembered today** is not a separate thing to maintain: it is the bullet lines of today's daily note, newest first. Writing a decision down with its time, as the rules above already require, is what puts it on the panel.
+- **Waiting on you** is the blocked section of the active-work note. Keep it true and the panel is true.
+
+Then try it once in front of them: set a goal with the tool and put one short list on the stage. If neither appears within a couple of seconds, read `panel.json` — a name in it doesn't match the vault.
+
 **If they chose Kokoro and their language isn't English, amend the language rule in `CLAUDE.md` too** — one line, in their words: *they write and speak in their own language; the assistant answers in English; notes in the vault stay in their language.* That split is the proven arrangement, not a compromise — the spoken reply and the caption are the same text, so a reply in a language the voice can't pronounce is the one combination that actually breaks.
 
 Leave that rule alone for anyone on Piper. They picked a voice that speaks their language; don't take it off them.
@@ -269,8 +280,9 @@ Hearing it answer feels like the end. It isn't. **Check all six by actually look
 *(4 and 5 are for the person installing it on their own machine. If you are testing a build whose voice path you have already proven on this same code, don't make them do it again — re-running a passed check to tick your own box wastes their time and is its own kind of dishonesty.)*
 6. `VAULT-INDEX.md` mentions the voice, the key and where to change it. **If they took Kokoro, it also says the assistant answers in English whatever language they use** — that is a design choice they agreed to, and it has to be written down or it becomes a mystery later.
 7. **The face is LIVE, not in demo mode.** Ask them to look at the corner: if it still says `demo mode` while the voice is running, the Stage 5 wiring didn't take and the interface is animating to nothing. Check `voice/.bus/face.url` exists and that the browser's address starts with `http://127.0.0.1`, not `file:///`.
+8. **The panel shows THEIR things, not the example.** The number beside "waiting on you" matches the blocked section of their active-work note, and the invented demo lines are gone. `CLAUDE.md` has the panel section, and you have used `panel.py` once in front of them.
 
-**2, 3, 6 and 7 are the ones that go missing** — every one of them has been skipped in a real run, and every one of them still leaves an assistant that talks. That's exactly why they need looking at rather than remembering.
+**2, 3, 6, 7 and 8 are the ones that go missing** — every one of them has been skipped in a real run, and every one of them still leaves an assistant that talks. That's exactly why they need looking at rather than remembering.
 
 ---
 

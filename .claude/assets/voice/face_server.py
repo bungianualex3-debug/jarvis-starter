@@ -2,7 +2,7 @@
 
 Serves three things and nothing else:
 
-  GET  /state       the bus file, as JSON
+  GET  /state       the bus file, as JSON, plus the panel's cards (panel_data.py)
   POST /say         a typed message, handed to the assistant as if spoken
   GET  /<anything>  static files from the web folder (interface.html and friends)
 
@@ -22,6 +22,11 @@ import threading
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+try:
+    import panel_data                      # the panel's cards, read from the vault
+except Exception:                          # an older install without the file
+    panel_data = None
 
 DEFAULT_PORT = 8781
 
@@ -75,6 +80,17 @@ class _Handler(SimpleHTTPRequestHandler):
             # no bus yet, or caught mid-replace — say so honestly rather than
             # sending something that looks like real state
             body = json.dumps({"state": "idle", "level": 0.0, "wave": []}).encode()
+        # The panel's cards ride along on the same poll: one request, one
+        # moment in time. If reading the vault fails for any reason the state
+        # still goes out exactly as it was — the face must never stall on it.
+        if panel_data is not None:
+            try:
+                doc = json.loads(body)
+                doc["panel"] = panel_data.snapshot(
+                    Path(self.directory), self.bus_file.parent, doc.get("activity"))
+                body = json.dumps(doc, ensure_ascii=False).encode()
+            except Exception:
+                pass
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))

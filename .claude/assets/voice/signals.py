@@ -7,7 +7,8 @@ second and draws whatever it says. That's the whole contract:
       "level":        0..1,
       "wave":         [64 floats, roughly -1..1],
       "caption":      { "text": str, "seq": int, "dur": seconds },
-      "conversation": [ { "role": "user"|"assistant", "text": str }, ... ] }
+      "conversation": [ { "role": "user"|"assistant", "text": str }, ... ],
+      "activity":     { "tool": str, "ts": seconds } }
 
 Deliberately one file rather than several: a single atomic replace means the
 face can never read a half-written mixture of two moments.
@@ -139,6 +140,15 @@ def push_conversation(role: str, text: str) -> None:
         _write(force=True)
 
 
+def set_activity(tool: str) -> None:
+    """Which tool the assistant is using right now, or "" when it has finished.
+    The panel turns the name into a plain line ("Reading a note"), so a silent
+    wait on screen reads as work rather than as a hang."""
+    with _lock:
+        _doc["activity"] = {"tool": (tool or "")[:40], "ts": time.time()}
+        _write(force=True)
+
+
 def reset() -> None:
     """Leave the face at rest on the way out, so it doesn't sit there looking
     like it's still listening to an assistant that has quit."""
@@ -146,6 +156,7 @@ def reset() -> None:
         _doc["state"] = IDLE
         _doc["level"] = 0.0
         _doc["wave"] = [0.0] * WAVE_POINTS
+        _doc["activity"] = {"tool": "", "ts": time.time()}
         _write(force=True)
 
 

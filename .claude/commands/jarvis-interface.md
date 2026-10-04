@@ -1,12 +1,14 @@
 ---
-description: Design and build my assistant a face — a live interface that reacts when it listens, thinks and speaks.
+description: Build my assistant its panel — a figure that listens, thinks and speaks, and a screen I can actually work in.
 ---
 
 # Give it a face
 
-Your memory exists. Now you get a body — a screen that shows you're awake.
+Your memory exists. Now you get a body — and a place to work.
 
-Four states, and it has to read across a room: **idle**, **listening**, **thinking**, **speaking**. That's the whole job. Everything else on screen is decoration and should be treated that way.
+The first version of this was a face and nothing else. That is fine on a spare monitor and useless to someone with one screen, because all they can do is talk at it. So it is a **panel** now: the figure on the left, a stage in the middle where you show what you just made, the conversation at the bottom, and three quiet words on the right edge that open what's waiting on them, what you remembered today, and a box for a quick note.
+
+Four states still have to read across a room: **idle**, **listening**, **thinking**, **speaking**.
 
 Do not explain the plan. Do not summarise the stages back to them. Start.
 
@@ -38,14 +40,11 @@ From those two files, take:
 
 Ask one, stop, wait. Never stack two. Never show the list up front.
 
-1. **The colour.** One colour, and everything on screen is built from it — the glow, the outline, the captions. What is it? *(A hex code, or just a name — "cold blue", "amber", "green like an old terminal". Convert it to hex yourself.)*
+1. **The look.** Two ways to go, and say which one you recommend:
+   - **Ours — recommended.** A white android stands on the left, full height, and moves differently when it waits, thinks and speaks. It is the look this project is known by, it is already built and tested, and most people should take it.
+   - **Their own.** A shape instead of a figure: **a ring** that swells and ripples with the voice, **an orb** that breathes and brightens, **a bar** that spikes as it speaks — or **they describe something else and you build it.**
 
-2. **The shape in the middle.** Offer three, described by behaviour rather than name:
-   - **a ring** that swells and ripples with the voice — the default, and the one that reads best from across a room
-   - **an orb** — a soft ball of light that breathes and brightens
-   - **a bar** — a line of light that spikes as it speaks, flattest and most machine-like
-
-   Then say plainly there's a fourth option: **describe something else and you'll build it.**
+2. **The colour.** One colour, and everything on screen is built from it — the glow, the lines, the captions. *(A hex code, or just a name — "cold blue", "amber". Convert it to hex yourself.)* **If they took the android, recommend keeping the red it ships with** and say why in one line: the figure glows red in its clips, and a different accent next to it looks like two designs on one screen. It is still their call.
 
 3. **Captions.** Should the words appear on screen as it speaks? Say what it's actually for before they answer: it's the difference between a decoration and something you can use with the sound off.
 
@@ -59,28 +58,43 @@ That's all. Tell them you're building it, and build it.
 
 ### The file
 
-Copy `.claude/assets/interface-base.html` into the vault root as `interface.html`. **Copy it, don't rewrite it** — it's a tested file and regenerating it from scratch is how you end up with a black screen and nobody who can debug it.
+Copy `.claude/assets/panel-base.html` into the vault root as `interface.html`. **Copy it, don't rewrite it** — it's a tested file and regenerating it from scratch is how you end up with a black screen and nobody who can debug it.
 
-Then edit **only the `CONFIG` block at the top**:
+**If they took the android, also copy the whole `.claude/assets/android/` folder into the vault root as `android/`** — three small clips, about a megabyte each. Without them the panel falls back to the ring on its own, so a forgotten copy looks like a different design rather than like a fault. Check the folder is there.
+
+Then edit **only the `CONFIG` block at the top** — these lines, leave the rest of it as it is:
 
 ```js
-const CONFIG = {
-  name:      "…",     // the assistant's name from CLAUDE.md
-  accent:    "#…",    // their colour, as hex
-  presence:  "ring",  // "ring" | "orb" | "bars"
-  size:      0.18,    // bigger for an always-on monitor, smaller for a window
-  showClock: true,
-  showState: true,
+  name:      "…",        // the assistant's name from CLAUDE.md
+  owner:     "…",        // their name, for the greeting
+  accent:    "#…",       // their colour, as hex
+  presence:  "android",  // or "ring" | "orb" | "bars" if they chose a shape
   showCaptions: true,
-  particles: 90,
-  source:    "/state",
-  pollMs:    100
-};
 ```
 
-Also translate the `LABELS` block into their language — it's four words and the state line is the only text that's always on screen.
+**Translate the whole `LABELS` block into their language.** It is longer than it used to be — the names of the cards, the four quick buttons, the greeting — and every line of it is text a person reads. Set `locale` to theirs (`"ro-RO"`, `"de-DE"`…) so the date comes out right. The `demoPanel` part is only what the panel plays before anything is connected; translate it too, it is the first thing they will see.
 
-**Don't touch anything below the config block.** If they want a different shape, that's the next section, not an edit to the engine.
+**Don't touch anything below those two blocks.** If they want a different shape, that's the next section, not an edit to the engine.
+
+### Tell the panel where things are — `panel.json`
+
+The panel shows what is already in the vault: what's waiting on them, what's open, what you wrote down today. The vault is in their language, so nothing can guess its file names. **You know them — you are standing in it.** Write `panel.json` in the vault root:
+
+```json
+{
+  "active_work": "<the exact file name of their active-work note>",
+  "open_heading": "<the heading of its in-progress section, as written>",
+  "blocked_heading": "<the heading of its blocked-on-them section, as written>",
+  "daily_folder": "<the daily notes folder, as named>",
+  "working": "<'Working', in their language>",
+  "activity": {
+    "Read": "…", "Write": "…", "Edit": "…", "Grep": "…", "Glob": "…",
+    "Bash": "…", "WebSearch": "…", "WebFetch": "…", "Task": "…"
+  }
+}
+```
+
+**Open the active-work note and copy the two headings from it; list the vault and copy the folder name.** Do not type them from memory of what you intended to call them — one wrong letter and that card stays empty with no error, which is the kind of fault nobody finds. The `activity` lines are what the panel says while you use each tool ("Reading a note", "Searching the web"): short, plain, in their language.
 
 ### If they described their own shape
 
@@ -141,9 +155,9 @@ What they do, so you can explain it accurately:
 
 Be straight about this, in one short passage, before they see it:
 
-- It runs **on its own right now** — open it and it cycles through the four states so you can see them. The corner says **demo mode** so it's never pretending.
-- It goes live when there's something feeding it. It polls `CONFIG.source` for JSON shaped `{ state, level, wave, caption: { text, seq, dur } }`. Anything that serves that — any language — drives it. Nothing to rewrite.
-- **This is a viewer, not a microphone.** It doesn't hear anything and doesn't have a voice. That comes later.
+- It runs **on its own right now**, in **demo mode**, and says so under the name in the corner. Everything they see on it at this point — the goal, the lists, what's on the stage — is **an invented example**, there so every part of the panel has something to show. None of it is theirs. Say that in those words, or they will wonder where the supplier and the offer email came from.
+- It goes live with `/jarvis-voice`. That is the step that starts the small local server the panel reads from; from then on the cards show **their** vault and typing into it reaches you.
+- **This is a viewer, not a microphone.** It doesn't hear anything and doesn't have a voice. That comes with the next command.
 
 ---
 
@@ -157,7 +171,8 @@ Wait until they say they can see it. If it's blank, the first thing to check is 
 
 Then, and only then:
 
-- **Show them the config block.** Open `interface.html`, point at the top twelve lines, and tell them that's the whole customisation surface: change a value, save, reload the browser. Have them **change the colour and reload right now**, while you're there. A person who has changed one value once will change more; a person who has only been told they could, won't.
+- **Walk them across the screen once.** The line at the top is today's one goal. The three words on the right open as drawers — have them click each, and press Esc. The quick buttons appear when they move to the typing box at the bottom; have them press one and watch the stage turn the page. Thirty seconds, and they know where everything is.
+- **Show them the config block.** Open `interface.html`, point at the top of the script, and tell them that's the whole customisation surface: change a value, save, reload the browser. Have them **change the colour and reload right now**, while you're there. A person who has changed one value once will change more; a person who has only been told they could, won't.
 - **Point at the presence function** further down. That's where the shape is drawn, it's the part worth rewriting, and a broken experiment falls back to the built-in shape rather than a black screen. They can ask you to change it any time — you'll have this file in context.
 - **Say where it sits in the whole thing:** memory first, face second, voice third. This one is the part they can see.
 
@@ -183,7 +198,7 @@ If they say no, say in one line where the two files are inside the vault, so the
 
 You just changed their system, and their own rules say a change that a future session needs to know gets recorded. Follow them — this is the first time those rules apply to something *you* did, and skipping it teaches them the rules are decoration.
 
-Add to `VAULT-INDEX.md`: one line saying `interface.html` exists, what it's for, that the config block at the top is where it's changed, and that it runs in demo mode until something feeds it. Mention the two launcher files and that the desktop shortcuts point at them. Add a line to the folder map if the files need one. Keep it to a couple of sentences — it's a map entry, not a manual.
+Add to `VAULT-INDEX.md`: one line saying `interface.html` exists, what it's for, that the config block at the top is where it's changed, and that it runs in demo mode until the voice is installed. Say that `panel.json` tells it which note and which headings to read — so if the active-work note or the daily folder is ever renamed, that file changes with it. Mention the `android/` folder if they took it, the two launcher files, and that the desktop shortcuts point at them. Add a line to the folder map if the files need one. Keep it to a couple of sentences — it's a map entry, not a manual.
 
 Don't create a note for this. One home per fact, and the index is the home.
 
@@ -199,6 +214,8 @@ A working interface on screen feels like the finish line. It isn't, and this is 
 2. The two launcher files exist in the vault root, named in their language, and they have **opened it with Start and closed it with Stop at least once**.
 3. You **asked** about desktop shortcuts and either made them and had them confirmed, or were told no.
 4. `VAULT-INDEX.md` mentions the interface and the launchers.
+5. `panel.json` exists, and **each name in it matches a real file, folder or heading — checked by opening them now**, not from memory.
+6. If they took the android, `android/` holds three clips and the figure is on screen, not the ring.
 
 Number 3 and number 4 are the two that go missing, because by then the screen already looks finished. A person left without a button goes back to not opening it, and an index that doesn't know the interface exists is the start of exactly the drift `/jarvis-check` was written to catch.
 
@@ -208,6 +225,6 @@ Number 3 and number 4 are the two that go missing, because by then the screen al
 
 - **Copy the base file, don't regenerate it.** Every canvas bug you invent is one they can't fix.
 - **One accent colour, black background.** Don't add a second colour because a state "needs" one — states are told apart by movement, not hue. This is the rule that keeps it looking designed.
-- **Don't add panels.** No stat readouts, no logs, no menus, however tempting. The value here is that it's calm enough to leave on a screen all day.
+- **Nothing in a box.** The first draft of this panel put every list in its own framed card and it read as crowded at a glance. The lists now wait behind a word and a number until they are reached for. If they ask for something new on screen, give it a place on the rail or on the stage — don't add a frame.
 - **Everything in their language**, including the state labels.
 - **Don't touch anything outside this folder**, and if `interface.html` already exists, stop and ask before overwriting.

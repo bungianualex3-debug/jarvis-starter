@@ -2,7 +2,7 @@
 
 Your AI forgets everything the moment you close it. This fixes that — and then gives it a face and a voice.
 
-Four commands. The first interviews you and builds your whole memory system from nothing. The second gives it a face you can leave on a screen. The third lets you talk to it out loud. The fourth keeps all three healthy.
+Four commands. The first interviews you and builds your whole memory system from nothing. The second gives it a body and a panel you can work in. The third lets you talk to it out loud. The fourth keeps all three healthy.
 
 **No API key. Nothing metered.** If you already pay for Claude, you already have everything you need.
 
@@ -33,15 +33,25 @@ Then it makes **its own new folder** and builds everything inside it: your boot 
 
 From then on you run `claude` **inside that folder** and it already knows who you are. That folder is also the one you open in Obsidian.
 
-## `/jarvis-interface` — the face
+## `/jarvis-interface` — the panel
 
 Run it in the same folder once your vault exists. It already knows your assistant's name and your language, so it doesn't ask — that's the point, it's a live demonstration that the memory works.
 
-You get a single `interface.html`: a night sky with real depth, one accent colour, and a shape in the middle that moves differently when it's idle, listening, thinking and speaking. There's a **chat panel** too, so you can type instead of talking when you're in a room where you can't.
+You get a single `interface.html`: a night sky, one accent colour, and **a white android standing on the left** that moves differently when it's waiting, thinking and speaking. That's the recommended look. If you'd rather have your own, pick a ring, an orb or a bar instead — or describe a shape and it gets built.
 
-It runs in demo mode on its own and **says so in the corner**, so you can see all four states before anything is wired up. It never pretends to be live.
+Around the figure is a screen you can actually work in, which matters if you have one monitor:
 
-The entire customisation surface is a dozen lines at the top of the file. The shape itself is one function further down — rewrite it, and if your version throws, the built-in one takes over rather than leaving you staring at a black screen.
+- **Today's goal**, one line at the top, with a tick.
+- **The stage**: when your assistant makes something — a plan, a draft, a page — it shows it there instead of telling you a file name.
+- **What it's doing right now**, so a wait never looks like a hang.
+- **The conversation**, typed or spoken, with a few one-click requests.
+- **Waiting on you**, **remembered today** and a **quick note**: three words on the right edge that open when you reach for them.
+
+Nothing on it is a second memory. Every line comes from notes already in your vault.
+
+It runs in demo mode on its own and **says so in the corner**: what you see then is an invented example, there to show every part working. It goes live — your goal, your lists, your notes — once the voice is installed.
+
+The customisation surface is two blocks at the top of the file. The shape itself is one function further down — rewrite it, and if your version throws, the built-in one takes over rather than leaving you staring at a black screen.
 
 It also puts **Start and Stop buttons on your desktop**, so you never need a terminal to look at your own assistant. Start opens it fullscreen; Stop closes only that window and leaves your ordinary browser alone.
 

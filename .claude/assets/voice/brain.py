@@ -45,6 +45,8 @@ import threading
 from collections.abc import Callable
 from pathlib import Path
 
+import signals
+
 try:
     from claude_agent_sdk import (
         AssistantMessage,
@@ -300,6 +302,12 @@ class Brain:
                             full.append(piece)
                             spoken_any = True
                             chunker.feed(piece)
+                elif etype == "content_block_start":
+                    # a tool is being picked up: tell the panel, so a wait on
+                    # screen says what is happening instead of nothing
+                    block = event.get("content_block") or {}
+                    if block.get("type") == "tool_use":
+                        signals.set_activity(block.get("name") or "")
                 elif etype == "content_block_stop":
                     chunker.flush()
 
@@ -316,6 +324,7 @@ class Brain:
             elif isinstance(msg, ResultMessage):
                 break
 
+        signals.set_activity("")            # the turn is over, whatever it was doing
         if self._abandon:
             return ""
         chunker.flush()
