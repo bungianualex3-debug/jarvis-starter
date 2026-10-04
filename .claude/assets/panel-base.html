@@ -13,13 +13,13 @@
     --accent-soft: rgba(255, 77, 61, 0.35);
     --accent-faint: rgba(255, 77, 61, 0.16);
     --accent-ghost: rgba(255, 77, 61, 0.10);
-    --ink: rgba(255, 255, 255, 0.86);
+    --ink: rgba(255, 255, 255, 0.88);
     --ink-mid: rgba(255, 255, 255, 0.56);
-    --ink-dim: rgba(255, 255, 255, 0.34);
-    --glass: rgba(9, 11, 15, 0.74);
-    --line: rgba(255, 255, 255, 0.08);
-    --gap: clamp(10px, 0.9vw, 16px);
-    --pad: clamp(12px, 1vw, 18px);
+    --ink-dim: rgba(255, 255, 255, 0.32);
+    --glass: rgba(8, 10, 14, 0.9);
+    --line: rgba(255, 255, 255, 0.07);
+    --edge: clamp(18px, 3vw, 56px);
+    --drawer: min(400px, 30vw);
     --fs: clamp(12px, 0.86vw, 15px);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -34,131 +34,94 @@
   }
   canvas { display: block; position: fixed; inset: 0; z-index: 0; }
   button, input { font: inherit; color: inherit; }
+  button { background: none; border: 0; cursor: pointer; }
+  ul { list-style: none; }
+  .lbl { font-size: 0.74em; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-dim); }
 
   /* ------------------------------------------------------------------
-     LAYOUT — one screen, three columns under a top bar. Left: who it is
-     and what waits on you. Middle: the stage, where it shows its work.
-     Right: what it remembered, and the conversation.
+     LAYOUT — nothing is boxed. The sky is the page; the presence sits on
+     the left, the stage in the middle, and everything else waits at the
+     edges until it is reached for:
+
+       top      name and state · today's goal · clock and date
+       left     the presence, with the spoken words under it
+       middle   the stage: whatever it just made
+       right    a rail of four words; each opens a drawer
+       bottom   what it is doing now · the conversation
   ------------------------------------------------------------------ */
-  #app {
-    position: fixed; inset: 0; z-index: 2;
-    display: grid;
-    grid-template-columns: minmax(230px, 20vw) minmax(0, 1fr) minmax(300px, 27vw);
-    grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: "top top top" "left mid right";
-    gap: var(--gap);
-    padding: clamp(12px, 1.4vw, 26px);
+  #top {
+    position: fixed; z-index: 5;      /* above the drawer, so the clock never hides */
+    top: clamp(16px, 3.4vh, 40px); left: var(--edge); right: var(--edge);
+    display: flex; align-items: flex-start; gap: 2.5vw;
   }
-  #top   { grid-area: top; display: flex; align-items: center; gap: var(--gap); min-height: clamp(48px, 5.4vh, 66px); }
-  #left  { grid-area: left;  display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
-  #mid   { grid-area: mid;   display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
-  #right { grid-area: right; display: flex; flex-direction: column; gap: var(--gap); min-height: 0; }
-
-  .card {
-    background: var(--glass);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: var(--pad);
-    min-height: 0;
-    position: relative;
-  }
-  .lbl, h4 {
-    font-size: 0.74em;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-  }
-  h4 { margin-bottom: 0.9em; display: flex; align-items: center; gap: 0.7em; }
-  h4 i { font-style: normal; color: var(--accent); opacity: 0.85; letter-spacing: 0.08em; }
-
-  /* --- top bar --- */
   #brand { letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.9em; white-space: nowrap; }
   #brand b { color: var(--ink); font-weight: 600; font-size: 1.15em; }
-  #brand span { display: block; margin-top: 0.4em; color: var(--accent); font-size: 0.8em; }
-  #goal {
-    flex: 1; min-width: 0;
-    display: flex; align-items: center; gap: 1em;
-    padding: 0.75em 1.1em;
-    background: var(--glass);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-  }
-  #goalText { flex: 1; min-width: 0; font-size: 1.12em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #brand span { display: block; margin-top: 0.45em; color: var(--accent); font-size: 0.8em; }
+
+  #goal { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 0.9em; padding-top: 0.1em; }
+  #goalText { min-width: 0; font-size: 1.2em; font-weight: 300; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 300ms ease; }
   #goal.done #goalText { color: var(--ink-dim); text-decoration: line-through; }
   #goalDone {
-    width: 1.7em; height: 1.7em; flex: none;
-    border-radius: 50%;
-    background: transparent;
-    border: 1px solid var(--accent-soft);
-    color: var(--accent);
-    cursor: pointer;
-    transition: background 200ms ease;
+    width: 1.5em; height: 1.5em; flex: none; border-radius: 50%;
+    border: 1px solid var(--accent-soft); color: transparent; font-size: 0.9em;
+    transition: background 200ms ease, color 200ms ease, transform 150ms ease;
   }
-  #goalDone:hover { background: var(--accent-ghost); }
-  #goal.done #goalDone { background: var(--accent-faint); }
-  #when { text-align: right; white-space: nowrap; }
-  #clock { font-size: clamp(22px, 2.1vw, 38px); font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; line-height: 1; }
-  #date { margin-top: 0.45em; font-size: 0.82em; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-dim); }
+  #goalDone:hover { background: var(--accent-ghost); color: var(--accent); transform: scale(1.1); }
+  #goal.done #goalDone { background: var(--accent-faint); color: var(--accent); }
 
-  /* --- left --- */
-  #presenceCard {
-    background: transparent;            /* the presence is drawn on the canvas behind */
-    flex: 0 0 auto;
-    aspect-ratio: 1 / 0.92;
-    display: flex; flex-direction: column; justify-content: flex-end;
-    overflow: hidden;
+  #when { text-align: right; white-space: nowrap; }
+  #clock { font-size: clamp(22px, 2.1vw, 38px); font-weight: 200; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; line-height: 1; }
+  #date { margin-top: 0.5em; font-size: 0.78em; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-dim); }
+
+  /* --- the presence: drawn on the canvas, this is only its place --- */
+  #presence {
+    position: fixed; z-index: 1; pointer-events: none;
+    left: var(--edge); top: 46%;
+    width: clamp(200px, 23vw, 460px); aspect-ratio: 1;
+    transform: translateY(-50%);
   }
-  #presence { position: absolute; inset: 0 0 18% 0; }
-  #cap { min-height: 3.1em; max-height: 4.5em; overflow: hidden; text-align: center; opacity: 0; transition: opacity 260ms ease; }
+  #cap {
+    position: fixed; z-index: 3; pointer-events: none;
+    left: var(--edge); top: calc(46% + clamp(100px, 11.5vw, 230px) + 1vh);
+    width: clamp(200px, 23vw, 460px);
+    max-height: 5.8em; overflow: hidden; text-align: center;
+    opacity: 0; transition: opacity 260ms ease;
+  }
   #cap.on { opacity: 1; }
-  #cap .line { font-size: 0.95em; line-height: 1.45; color: var(--ink-dim); text-wrap: balance; }
+  #cap .line { font-size: 1.02em; line-height: 1.45; color: var(--ink-dim); text-wrap: balance; }
   #cap .w { transition: color 90ms linear; }
   #cap .w.lit { color: var(--ink); }
 
-  #waitCard { flex: 1 1 0; display: flex; flex-direction: column; }
-  ul { list-style: none; }
-  #waitList { overflow-y: auto; flex: 1; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--accent-faint) transparent; }
-  #waitList li {
-    position: relative;
-    padding: 0.55em 0 0.55em 1.3em;
-    border-top: 1px solid var(--line);
-    line-height: 1.4;
-    color: var(--ink);
+  /* --- the stage: no frame, the work sits straight on the sky --- */
+  #stageWrap {
+    position: fixed; z-index: 2;
+    left: calc(var(--edge) + clamp(200px, 23vw, 460px) + 3vw);
+    right: calc(var(--edge) + 9vw);
+    top: 15vh; bottom: 25vh;
+    display: flex; flex-direction: column;
+    transition: right 420ms cubic-bezier(0.2, 0.7, 0.1, 1);
   }
-  #waitList li:first-child { border-top: 0; }
-  #waitList li::before {
-    content: ""; position: absolute; left: 0.15em; top: 1.05em;
-    width: 0.45em; height: 0.45em; border-radius: 50%;
-    border: 1px solid var(--accent);
+  body.open #stageWrap { right: calc(var(--drawer) + 3vw); }
+  #stageHead { display: flex; align-items: baseline; gap: 1.4em; padding-bottom: 1.1em; flex: none; min-height: 2.4em; }
+  #stageTitle { display: none; }
+  #shelf { display: flex; gap: 1.5em; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+  #shelf::-webkit-scrollbar { display: none; }
+  #shelf button {
+    flex: none; padding: 0.2em 0 0.45em; color: var(--ink-dim); white-space: nowrap;
+    border-bottom: 1px solid transparent;
+    transition: color 200ms ease, border-color 200ms ease;
+    animation: rise 420ms ease both;
   }
-  .empty { color: var(--ink-dim); font-style: italic; padding: 0.4em 0; }
+  #shelf button:hover { color: var(--ink); }
+  #shelf button.on { color: var(--ink); border-bottom-color: var(--accent); }
+  #shelf button i { display: none; }
 
-  #noteCard { flex: 0 0 auto; }
-  #noteIn, #chatin {
-    width: 100%;
-    padding: 0.7em 1em;
-    border-radius: 1.4em;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    outline: none;
-    caret-color: var(--accent);
-    transition: border-color 300ms ease, box-shadow 300ms ease, background 300ms ease;
-  }
-  #noteIn::placeholder, #chatin::placeholder { color: rgba(255, 255, 255, 0.26); letter-spacing: 0.04em; }
-  #noteIn:focus, #chatin:focus { border-color: var(--accent-soft); background: rgba(255, 255, 255, 0.06); box-shadow: 0 0 14px var(--accent-ghost); }
-  #noteMsg, #chatnote { margin-top: 0.5em; min-height: 1.2em; font-size: 0.85em; letter-spacing: 0.06em; color: var(--accent); opacity: 0; transition: opacity 350ms ease; }
-  #noteMsg.on, #chatnote.on { opacity: 0.8; }
-
-  /* --- middle: the stage --- */
-  #stageCard { flex: 1 1 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
-  #stageHead { display: flex; align-items: baseline; gap: 1em; padding: var(--pad) var(--pad) 0.8em; }
-  #stageHead h4 { margin: 0; }
-  #stageTitle { color: var(--ink-mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #stage { position: relative; flex: 1; min-height: 0; border-top: 1px solid var(--line); overflow: hidden; }
+  #stage { position: relative; flex: 1; min-height: 0; }
   .sheet {
     position: absolute; inset: 0;
-    padding: clamp(18px, 2.2vw, 42px);
+    padding: 0.4em 2em 1em 1.6em;
+    border-left: 1px solid var(--accent-soft);
+    background: radial-gradient(120% 90% at 0% 30%, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0) 78%);
     overflow-y: auto;
     scrollbar-width: thin; scrollbar-color: var(--accent-faint) transparent;
     animation: turnIn 720ms cubic-bezier(0.2, 0.7, 0.1, 1) both;
@@ -173,102 +136,153 @@
     from { opacity: 1; transform: none; }
     to   { opacity: 0; transform: perspective(1400px) rotateY(10deg) translateX(-2%); }
   }
-  .sheet h2 { font-size: clamp(20px, 1.9vw, 34px); font-weight: 300; letter-spacing: 0.01em; margin-bottom: 0.7em; line-height: 1.2; }
-  .sheet h2 em { font-style: normal; color: var(--accent); }
-  .sheet p { font-size: 1.14em; line-height: 1.6; color: var(--ink); margin-bottom: 0.9em; max-width: 62ch; }
-  .sheet .rows { display: grid; gap: 0.2em; max-width: 70ch; }
-  .sheet .rows div { display: flex; gap: 1em; padding: 0.6em 0; border-top: 1px solid var(--line); font-size: 1.1em; line-height: 1.45; }
-  .sheet .rows div b { flex: none; min-width: 4.2em; font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; }
-  .sheet .big { display: flex; gap: clamp(18px, 3vw, 56px); margin: 0.4em 0 1.4em; flex-wrap: wrap; }
-  .sheet .big div { min-width: 6em; }
-  .sheet .big b { display: block; font-size: clamp(30px, 3.4vw, 60px); font-weight: 200; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .sheet .big span { display: block; margin-top: 0.6em; font-size: 0.78em; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-dim); }
-  .sheet img { max-width: 100%; max-height: 100%; display: block; margin: 0 auto; border-radius: 8px; }
-  .sheet.frame { padding: 0; }
-  .sheet iframe { width: 100%; height: 100%; border: 0; background: #0b0d12; }
+  .sheet h2 { font-size: clamp(22px, 2.2vw, 40px); font-weight: 200; letter-spacing: 0.01em; margin-bottom: 0.8em; line-height: 1.2; }
+  .sheet p { font-size: 1.2em; line-height: 1.65; color: var(--ink); margin-bottom: 0.9em; max-width: 60ch; }
+  .sheet .rows { display: grid; max-width: 66ch; }
+  .sheet .rows div { display: flex; gap: 1.2em; padding: 0.7em 0; border-top: 1px solid var(--line); font-size: 1.14em; line-height: 1.45; transition: background 200ms ease, padding 200ms ease; }
+  .sheet .rows div:first-child { border-top: 0; }
+  .sheet .rows div:hover { background: var(--accent-ghost); padding-left: 0.6em; }
+  .sheet .rows div b { flex: none; min-width: 4em; font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .sheet .big { display: flex; gap: clamp(22px, 3.4vw, 64px); margin: 0.2em 0 1.6em; flex-wrap: wrap; }
+  .sheet .big b { display: block; font-size: clamp(34px, 3.8vw, 68px); font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; }
+  .sheet .big span { display: block; margin-top: 0.7em; font-size: 0.76em; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-dim); }
+  .sheet img { max-width: 100%; max-height: 100%; display: block; border-radius: 8px; }
+  .sheet.frame { padding: 0; border-left: 0; background: none; }
+  .sheet iframe { width: 100%; height: 100%; border: 1px solid var(--line); border-radius: 10px; background: #0b0d12; }
 
-  #shelf { flex: 0 0 auto; display: flex; gap: 0.6em; overflow-x: auto; scrollbar-width: none; min-height: 2.7em; }
-  #shelf::-webkit-scrollbar { display: none; }
-  #shelf button {
-    flex: none; max-width: 17em;
-    padding: 0.55em 1em;
-    background: var(--glass);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    color: var(--ink-mid);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    cursor: pointer;
-    transition: border-color 200ms ease, color 200ms ease;
-    animation: rise 420ms ease both;
+  /* --- the rail: four words at the right edge, each opens a drawer --- */
+  #rail {
+    position: fixed; z-index: 5;
+    right: var(--edge); top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: flex-end; gap: 1.7em;
+    transition: right 420ms cubic-bezier(0.2, 0.7, 0.1, 1);
   }
-  #shelf button:hover { color: var(--ink); border-color: var(--accent-soft); }
-  #shelf button.on { color: var(--ink); border-color: var(--accent-soft); background: var(--accent-ghost); }
-  #shelf button i { font-style: normal; color: var(--accent); margin-right: 0.6em; font-size: 0.78em; letter-spacing: 0.14em; text-transform: uppercase; }
+  body.open #rail { right: calc(var(--drawer) + 1.4vw); }
+  #rail button {
+    display: flex; align-items: baseline; gap: 0.8em;
+    font-size: 0.78em; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-dim);
+    transition: color 200ms ease, transform 200ms ease;
+  }
+  #rail button b { font-size: 1.9em; font-weight: 200; letter-spacing: 0; color: var(--ink-mid); font-variant-numeric: tabular-nums; min-width: 1ch; text-align: right; transition: color 200ms ease; }
+  #rail button:hover, #rail button.on { color: var(--ink); transform: translateX(-4px); }
+  #rail button:hover b, #rail button.on b { color: var(--accent); }
+  #rail button.ping b { animation: ping 900ms ease; }
+  @keyframes ping { 0% { color: var(--accent); transform: scale(1.5); } 100% { transform: none; } }
 
+  /* a new line of memory or a filed note surfaces here for a few seconds */
+  #toast {
+    position: fixed; z-index: 5; pointer-events: none;
+    right: calc(var(--edge) + 9vw); top: 50%;
+    max-width: 26vw; text-align: right;
+    font-size: 1.02em; line-height: 1.4; color: var(--ink);
+    opacity: 0; transform: translate(10px, -50%);
+    transition: opacity 400ms ease, transform 400ms ease;
+  }
+  #toast.on { opacity: 1; transform: translate(0, -50%); }
+  #toast b { display: block; margin-bottom: 0.35em; font-size: 0.74em; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  body.open #toast { opacity: 0; }
+
+  #drawer {
+    position: fixed; z-index: 4;
+    top: 0; right: 0; bottom: 0; width: var(--drawer);
+    padding: 15vh 2vw 6vh 2.2vw;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0), var(--glass) 14%);
+    transform: translateX(102%);
+    transition: transform 420ms cubic-bezier(0.2, 0.7, 0.1, 1);
+    display: flex; flex-direction: column;
+  }
+  body.open #drawer { transform: none; }
+  .pane { display: none; flex-direction: column; min-height: 0; flex: 1; }
+  .pane.on { display: flex; animation: rise 360ms ease both; }
+  .pane h4 { font-size: 0.74em; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 1.3em; }
+  .pane h4 i { display: none; }
+  .pane ul { overflow-y: auto; flex: 1; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--accent-faint) transparent; }
+  .pane li { padding: 0.75em 0; border-top: 1px solid var(--line); line-height: 1.45; font-size: 1.05em; animation: rise 420ms ease both; }
+  .pane li:first-child { border-top: 0; }
+  #waitList li { position: relative; padding-left: 1.5em; }
+  #waitList li::before { content: ""; position: absolute; left: 0.15em; top: 1.25em; width: 0.5em; height: 0.5em; border-radius: 50%; border: 1px solid var(--accent); }
+  #memList li { display: flex; gap: 1em; }
+  #memList li b { flex: none; font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .empty { color: var(--ink-dim); font-style: italic; }
+  .empty::before { display: none; }
+
+  #noteIn, #chatin {
+    width: 100%; padding: 0.8em 1.2em;
+    border-radius: 1.6em;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    outline: none; caret-color: var(--accent);
+    transition: border-color 300ms ease, box-shadow 300ms ease, background 300ms ease;
+  }
+  #noteIn::placeholder, #chatin::placeholder { color: rgba(255, 255, 255, 0.28); letter-spacing: 0.04em; }
+  #noteIn:focus, #chatin:focus { border-color: var(--accent-soft); background: rgba(8, 10, 14, 0.85); box-shadow: 0 0 18px var(--accent-ghost); }
+  #noteMsg, #chatnote { margin-top: 0.6em; min-height: 1.2em; font-size: 0.85em; letter-spacing: 0.06em; color: var(--accent); opacity: 0; transition: opacity 350ms ease; }
+  #noteMsg.on, #chatnote.on { opacity: 0.85; }
+  #noteHint { margin-top: 1.2em; color: var(--ink-dim); line-height: 1.5; }
+
+  /* --- bottom left: what it is doing right now --- */
   #doing {
-    flex: 0 0 auto;
-    display: flex; align-items: center; gap: 0.9em;
-    padding: 0.8em 1.1em;
-    background: var(--glass);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    min-height: 3em;
+    position: fixed; z-index: 3;
+    left: var(--edge); bottom: clamp(18px, 4.4vh, 48px);
+    max-width: 24vw;
+    display: flex; align-items: center; gap: 0.8em;
   }
-  #doing .dot { width: 0.55em; height: 0.55em; border-radius: 50%; background: var(--ink-dim); flex: none; }
+  #doing .dot { width: 0.5em; height: 0.5em; border-radius: 50%; background: var(--ink-dim); flex: none; }
   #doing.busy .dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 1.2s ease-in-out infinite; }
-  #doingText { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-mid); }
+  #doingLbl { display: none; }
+  #doingText { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-dim); }
   #doing.busy #doingText { color: var(--ink); }
   #doingText.swap { animation: rise 320ms ease both; }
   @keyframes pulse { 50% { opacity: 0.35; transform: scale(0.8); } }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-  /* --- right --- */
-  #memCard { flex: 0 1 34%; display: flex; flex-direction: column; }
-  #memList { overflow-y: auto; flex: 1; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--accent-faint) transparent; }
-  #memList li { display: flex; gap: 0.9em; padding: 0.5em 0; border-top: 1px solid var(--line); line-height: 1.4; animation: rise 420ms ease both; }
-  #memList li:first-child { border-top: 0; }
-  #memList li b { flex: none; font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; opacity: 0.9; }
-  #memList li span { color: var(--ink); }
-
-  /* the conversation: the engine's chat, brought permanently forward */
-  #chat { flex: 1 1 0; display: flex; flex-direction: column; opacity: 1; }
-  #log {
-    flex: 1; min-height: 0;
-    display: flex; flex-direction: column; gap: 0.5em;
-    overflow-y: auto; overscroll-behavior: contain;
-    padding: 0.2em 0.3em 0.8em 0.1em;
-    scrollbar-width: thin; scrollbar-color: var(--accent-faint) transparent;
+  /* --- bottom centre: the conversation. Receded until reached for: the
+     input is always there; the last messages and the quick buttons come
+     forward on hover, on focus, or when something is said. --- */
+  #chat {
+    position: fixed; z-index: 3;
+    left: 50%; bottom: clamp(14px, 3.4vh, 40px);
+    width: min(660px, 44vw);
+    transform: translateX(-50%);
+    display: flex; flex-direction: column;
   }
-  #log::-webkit-scrollbar { width: 4px; }
-  #log::-webkit-scrollbar-thumb { background: var(--accent-faint); border-radius: 2px; }
+  #log {
+    display: flex; flex-direction: column; gap: 0.5em;
+    max-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    padding: 0 0.3em;
+    mask-image: linear-gradient(180deg, transparent 0, #000 2em);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 2em);
+    scrollbar-width: none;
+    opacity: 0; transition: opacity 400ms ease, max-height 400ms ease, padding 400ms ease;
+  }
+  #log::-webkit-scrollbar { display: none; }
+  #chat.awake #log { opacity: 1; max-height: 30vh; padding: 2em 0.3em 0.9em; }
   .msg {
-    max-width: 90%;
-    padding: 0.5em 0.85em 0.55em;
-    border-radius: 0.9em;
-    line-height: 1.45;
-    word-break: break-word;
-    user-select: text;
+    max-width: 88%; padding: 0.5em 0.9em 0.55em; border-radius: 1em;
+    line-height: 1.45; word-break: break-word; user-select: text;
     opacity: 0; transform: translateY(5px);
     transition: opacity 350ms ease, transform 350ms ease;
   }
   .msg.in { opacity: 1; transform: none; }
-  .msg.ai { align-self: flex-start; border-bottom-left-radius: 0.25em; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.07); }
-  .msg.user { align-self: flex-end; border-bottom-right-radius: 0.25em; background: var(--accent-ghost); border: 1px solid var(--accent-soft); }
+  .msg.ai { align-self: flex-start; border-bottom-left-radius: 0.25em; background: rgba(8, 10, 14, 0.82); border: 1px solid rgba(255, 255, 255, 0.08); }
+  .msg.user { align-self: flex-end; border-bottom-right-radius: 0.25em; background: rgba(40, 12, 10, 0.82); border: 1px solid var(--accent-soft); }
   .msg.failed { opacity: 0.4; border-style: dashed; }
   .msg.pending { opacity: 0.55; }
-  #quick { display: flex; flex-wrap: wrap; gap: 0.5em; padding: 0.2em 0 0.8em; }
+  #quick {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5em;
+    max-height: 0; overflow: hidden; opacity: 0;
+    transition: opacity 300ms ease, max-height 300ms ease, padding 300ms ease;
+  }
+  #chat.awake #quick, #chat:hover #quick, #chat:focus-within #quick { opacity: 1; max-height: 6em; padding-bottom: 0.8em; }
   #quick button {
-    padding: 0.42em 0.9em;
-    background: transparent;
-    border: 1px solid var(--accent-soft);
-    border-radius: 1.2em;
-    color: var(--ink);
-    font-size: 0.92em;
-    cursor: pointer;
+    padding: 0.42em 0.95em; border: 1px solid var(--accent-soft); border-radius: 1.2em;
+    background: rgba(8, 10, 14, 0.7); color: var(--ink); font-size: 0.92em;
     transition: background 200ms ease, transform 120ms ease;
   }
-  #quick button:hover { background: var(--accent-ghost); }
+  #quick button:hover { background: rgba(60, 16, 12, 0.8); }
   #quick button:active { transform: scale(0.96); }
+  #chatnote { text-align: center; }
 
   #notice {
     position: fixed; bottom: 4px; left: 50%; transform: translateX(-50%);
@@ -277,82 +291,63 @@
   }
 
   /* ------------------------------------------------------------------
-     THE ENTRANCE — the board does not just appear. The sky is there
-     first, then the pieces arrive one after another.
+     THE ENTRANCE — the sky first, then the pieces, one after another.
   ------------------------------------------------------------------ */
-  .boot { opacity: 0; transform: translateY(14px) scale(0.985); }
-  body.on .boot { animation: arrive 780ms cubic-bezier(0.2, 0.7, 0.1, 1) both; animation-delay: calc(var(--i, 0) * 110ms + 500ms); }
-  @keyframes arrive {
-    0%   { opacity: 0; transform: translateY(14px) scale(0.985); border-color: var(--accent-soft); }
-    60%  { opacity: 1; border-color: var(--accent-soft); }
-    100% { opacity: 1; transform: none; }
-  }
-  #veil { position: fixed; inset: 0; background: #000; z-index: 1; pointer-events: none; transition: opacity 1600ms ease; }
+  .boot { opacity: 0; }
+  body.on .boot { animation: arrive 900ms cubic-bezier(0.2, 0.7, 0.1, 1) both; animation-delay: calc(var(--i, 0) * 160ms + 700ms); }
+  @keyframes arrive { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: none; } }
+  #veil { position: fixed; inset: 0; background: #000; z-index: 1; pointer-events: none; transition: opacity 1800ms ease; }
   body.on #veil { opacity: 0; }
-
-  /* a narrow window: stack it rather than squeeze it */
-  @media (max-width: 900px) {
-    html, body { overflow: auto; }
-    #app { position: static; grid-template-columns: 1fr; grid-template-rows: none; grid-template-areas: "top" "left" "mid" "right"; }
-    #stageCard { min-height: 60vh; }
-    #chat { min-height: 60vh; }
-    #goal { order: 3; flex-basis: 100%; }
-    #top { flex-wrap: wrap; }
-  }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="veil"></div>
-<div id="app">
-  <header id="top">
-    <div id="brand" class="boot" style="--i:0"><b>JARVIS</b><span id="statelabel">idle</span></div>
-    <div id="goal" class="boot" style="--i:1">
-      <span class="lbl" id="goalLbl"></span>
-      <span id="goalText"></span>
-      <button id="goalDone" type="button" aria-label="done">&#10003;</button>
-    </div>
-    <div id="when" class="boot" style="--i:2"><div id="clock">--:--</div><div id="date"></div></div>
-  </header>
 
-  <aside id="left">
-    <section class="card boot" id="presenceCard" style="--i:3">
-      <div id="presence"></div>
-      <div id="cap"><div class="line" id="capline"></div></div>
-    </section>
-    <section class="card boot" id="waitCard" style="--i:5">
-      <h4 id="waitLbl"></h4>
-      <ul id="waitList"></ul>
-    </section>
-    <section class="card boot" id="noteCard" style="--i:7">
-      <h4 id="noteLbl"></h4>
-      <input id="noteIn" type="text" maxlength="600" spellcheck="false" autocomplete="off">
-      <div id="noteMsg"></div>
-    </section>
-  </aside>
+<header id="top">
+  <div id="brand" class="boot" style="--i:0"><b>JARVIS</b><span id="statelabel">idle</span></div>
+  <div id="goal" class="boot" style="--i:2">
+    <span class="lbl" id="goalLbl"></span>
+    <span id="goalText"></span>
+    <button id="goalDone" type="button" aria-label="done">&#10003;</button>
+  </div>
+  <div id="when" class="boot" style="--i:1"><div id="clock">--:--</div><div id="date"></div></div>
+</header>
 
-  <main id="mid">
-    <section class="card boot" id="stageCard" style="--i:4">
-      <div id="stageHead"><h4 id="stageLbl"></h4><span id="stageTitle"></span></div>
-      <div id="stage"></div>
-    </section>
-    <div id="shelf" class="boot" style="--i:8"></div>
-    <div id="doing" class="boot" style="--i:9"><span class="dot"></span><span class="lbl" id="doingLbl"></span><span id="doingText"></span></div>
-  </main>
+<div id="presence"></div>
+<div id="cap"><div class="line" id="capline"></div></div>
 
-  <aside id="right">
-    <section class="card boot" id="memCard" style="--i:6">
-      <h4 id="memLbl"></h4>
-      <ul id="memList"></ul>
-    </section>
-    <section class="card boot" id="chat" style="--i:8">
-      <h4 id="chatLbl"></h4>
-      <div id="log"></div>
-      <div id="quick"></div>
-      <input id="chatin" type="text" maxlength="2000" spellcheck="false" autocomplete="off">
-      <div id="chatnote"></div>
-    </section>
-  </aside>
+<main id="stageWrap" class="boot" style="--i:3">
+  <div id="stageHead"><span class="lbl" id="stageLbl" hidden></span><span id="stageTitle"></span><div id="shelf"></div></div>
+  <div id="stage"></div>
+</main>
+
+<nav id="rail" class="boot" style="--i:4">
+  <button type="button" data-pane="wait"><span id="railWait"></span><b id="nWait">0</b></button>
+  <button type="button" data-pane="mem"><span id="railMem"></span><b id="nMem">0</b></button>
+  <button type="button" data-pane="note"><span id="railNote"></span><b>+</b></button>
+</nav>
+<div id="toast"></div>
+
+<aside id="drawer">
+  <section class="pane" id="pane-wait"><h4 id="waitLbl"></h4><ul id="waitList"></ul></section>
+  <section class="pane" id="pane-mem"><h4 id="memLbl"></h4><ul id="memList"></ul></section>
+  <section class="pane" id="pane-note">
+    <h4 id="noteLbl"></h4>
+    <input id="noteIn" type="text" maxlength="600" spellcheck="false" autocomplete="off">
+    <div id="noteMsg"></div>
+    <p id="noteHint"></p>
+  </section>
+</aside>
+
+<div id="doing" class="boot" style="--i:5"><span class="dot"></span><span class="lbl" id="doingLbl"></span><span id="doingText"></span></div>
+
+<div id="chat" class="boot" style="--i:5">
+  <span id="chatLbl" hidden></span>
+  <div id="log"></div>
+  <div id="quick"></div>
+  <input id="chatin" type="text" maxlength="2000" spellcheck="false" autocomplete="off">
+  <div id="chatnote"></div>
 </div>
 <div id="notice"></div>
 
@@ -400,6 +395,7 @@ const LABELS = {
   notePlaceholder: "a thought to file away",
   noteSaved: "filed",
   notePrefix: "Quick note, file it where it belongs: ",
+  noteHint: "Write it and press Enter. It gets filed in the right place in memory, no conversation needed.",
   stage: "Stage",
   doing: "Now",
   doingIdle: "Ready",
@@ -1360,11 +1356,14 @@ const chat = (() => {
 
    The first version of this file was a face and nothing else: fine on a
    spare monitor, useless to someone with one screen, because all they
-   could do was talk at it. So the face is now one card among several:
+   could do was talk at it. So the face now shares the screen with the
+   work, and nothing is boxed in:
 
-     today's goal · waiting on you · quick note      (left)
-     the stage, its shelf, and "what I'm doing now"   (middle)
-     remembered today · the conversation              (right)
+     today's goal, the clock and the date             (top)
+     the stage, with a shelf of what was shown        (middle)
+     what it is doing now · the conversation          (bottom)
+     waiting on you · remembered today · quick note   (a rail on the right;
+                                                       each opens a drawer)
 
    Everything shown comes from the same poll as the state. The source may
    add a `panel` object to its JSON; every field is optional, and a field
@@ -1403,6 +1402,10 @@ const panel = (() => {
   $('doingLbl').textContent = LABELS.doing;
   $('memLbl').textContent = LABELS.memory;
   $('chatLbl').textContent = LABELS.chat;
+  $('railWait').textContent = LABELS.waiting;
+  $('railMem').textContent = LABELS.memory;
+  $('railNote').textContent = LABELS.note;
+  $('noteHint').textContent = LABELS.noteHint;
 
   const data = { goal: '', goalDone: false, waiting: [], open: [], memory: [] };
   let live = false;                 // true once a real source has sent panel data
@@ -1431,6 +1434,7 @@ const panel = (() => {
     $('waitLbl').innerHTML = '';
     $('waitLbl').append(LABELS.waiting, el('i', data.waiting.length ? String(data.waiting.length) : ''));
     fill($('waitList'), data.waiting, t => el('li', String(t)), LABELS.waitingEmpty);
+    $('nWait').textContent = String(data.waiting.length);
   }
   function setMemory(list) {
     data.memory = list.slice(0, 30);
@@ -1441,10 +1445,46 @@ const panel = (() => {
       li.append(el('b', m.t || ''), el('span', String(m.text || '')));
       return li;
     }, LABELS.memoryEmpty);
+    $('nMem').textContent = String(data.memory.length);
   }
   function addMemory(text, t) {
     setMemory([{ t: t || nowHM(), text }].concat(data.memory));
     $('memList').scrollTop = 0;
+    surface(LABELS.memory, text, 'mem');
+  }
+
+  /* --- the rail and its drawer ---
+     Lists that are always on screen turn a calm page into a dashboard. So
+     they wait behind a word and a number, and a new line surfaces by itself
+     for a few seconds: seen when it happens, out of the way otherwise. */
+  let openPane = null;
+  function togglePane(name) {
+    openPane = openPane === name ? null : name;
+    document.body.classList.toggle('open', !!openPane);
+    for (const p of document.querySelectorAll('.pane')) p.classList.toggle('on', p.id === 'pane-' + openPane);
+    for (const b of document.querySelectorAll('#rail button')) b.classList.toggle('on', b.dataset.pane === openPane);
+    if (openPane === 'note') setTimeout(() => $('noteIn').focus(), 300);
+  }
+  for (const b of document.querySelectorAll('#rail button')) b.addEventListener('click', () => togglePane(b.dataset.pane));
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { if (openPane) togglePane(openPane); document.activeElement.blur(); return; }
+    if (e.target.tagName === 'INPUT') return;       // typing never drives the page
+    const pane = { '1': 'wait', '2': 'mem', '3': 'note' }[e.key];
+    if (pane) togglePane(pane);
+    if (e.key === '/') { e.preventDefault(); chat.input.focus(); }
+  });
+
+  let toastTimer = 0;
+  function surface(label, text, pane) {
+    const btn = document.querySelector('#rail button[data-pane="' + pane + '"]');
+    if (btn) { btn.classList.remove('ping'); void btn.offsetWidth; btn.classList.add('ping'); }
+    if (openPane) return;                           // the drawer already shows it
+    const t = $('toast');
+    t.innerHTML = '';
+    t.append(el('b', label), text);
+    t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('on'), 4200);
   }
 
   /* --- "what I'm doing now" --- */
