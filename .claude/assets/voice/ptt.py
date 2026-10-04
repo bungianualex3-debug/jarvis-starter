@@ -47,8 +47,10 @@ if AVAILABLE:
         "caps_lock": keyboard.Key.caps_lock,
         "f8": keyboard.Key.f8,
         "f9": keyboard.Key.f9,
-        "pause": keyboard.Key.pause,
     }
+    # a Mac keyboard has no Pause key, and pynput has no name for it there
+    if hasattr(keyboard.Key, "pause"):
+        KEYS["pause"] = keyboard.Key.pause
 
 MIN_HOLD_SECONDS = 0.25                # taps shorter than this are ignored
 
