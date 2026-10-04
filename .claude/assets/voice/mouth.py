@@ -3,6 +3,7 @@
 Three rungs, best first, each one catching the one above it:
 
     Kokoro (only on a machine with a working graphics card)
+    or the Mac's own voice via `say` (engine "mac", voice in "mac_voice")
       -> Piper (a real neural voice, offline, free — the floor everywhere)
         -> the system voice via pyttsx3 (SAPI on Windows, the built-in voice
            on a Mac), so it can always speak somehow.
@@ -33,7 +34,9 @@ from __future__ import annotations
 
 import os
 import queue
+import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -76,6 +79,14 @@ class Mouth:
         self._kokoro_lock = threading.Lock()
         self._kokoro_failed = False
 
+        # The Mac's own voices (the `say` program), opt-in from config. It
+        # writes a wav just like Piper does, so captions and cutting off
+        # mid-word keep working.
+        self.mac_voice = (tts.get("mac_voice") or "").strip()
+        self.use_mac = ((tts.get("engine") or "piper").strip().lower() == "mac"
+                        and sys.platform == "darwin"
+                        and shutil.which("say") is not None)
+
         self._synth_q: queue.Queue = queue.Queue()
         self._play_q: queue.Queue = queue.Queue()
         self._generation = 0
@@ -91,6 +102,8 @@ class Mouth:
             print(f"[mouth] Kokoro voice: {self.kokoro_voice} on {self.kokoro_device}")
             threading.Thread(target=self._load_kokoro, daemon=True,
                              name="mouth-warm").start()
+        elif self.use_mac:
+            print(f"[mouth] Mac voice: {self.mac_voice or 'system default'}")
         elif self.use_piper:
             print(f"[mouth] Piper voice: {self.model.name}")
         else:
@@ -145,7 +158,8 @@ class Mouth:
             time.sleep(0.02)
 
     def healthy(self) -> bool:
-        return self.use_kokoro or self.use_piper or self._sapi is not None
+        return (self.use_kokoro or self.use_mac or self.use_piper
+                or self._sapi is not None)
 
     def close(self) -> None:
         self._closed = True
@@ -220,6 +234,7 @@ class Mouth:
             except Exception as e:
                 print(f"[mouth] voice failed ({e}); using system voice.")
                 self.use_kokoro = False
+                self.use_mac = False
                 self.use_piper = False
                 self._init_sapi()
                 audio, rate = None, 0
@@ -250,6 +265,23 @@ class Mouth:
         wav = np.clip(np.concatenate(chunks), -1.0, 1.0)
         return (wav * 32767.0).astype(np.int16), KOKORO_RATE
 
+    def _synth_mac(self, text: str):
+        """The Mac's `say` writes a 16-bit wav; we read it back."""
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tf:
+            wav_path = tf.name
+        try:
+            cmd = ["say", "-o", wav_path, "--data-format=LEI16@22050"]
+            if self.mac_voice:
+                cmd += ["-v", self.mac_voice]
+            subprocess.run(cmd, input=text, text=True, encoding="utf-8",
+                           capture_output=True, timeout=60, check=True)
+            with wave.open(wav_path, "rb") as w:
+                rate = w.getframerate()
+                frames = w.readframes(w.getnframes())
+            return np.frombuffer(frames, dtype=np.int16), rate
+        finally:
+            Path(wav_path).unlink(missing_ok=True)
+
     def _synthesize(self, text: str):
         """The one seam for the voice backend. Piper writes a wav; we read it."""
         if self.use_kokoro:
@@ -261,6 +293,15 @@ class Mouth:
                 print(f"[mouth] Kokoro failed ({e}) — dropping to the Piper voice.")
             # demote once, rather than paying the same failure every sentence
             self.use_kokoro = False
+
+        if self.use_mac:
+            try:
+                audio, rate = self._synth_mac(text)
+                if audio is not None and audio.size:
+                    return audio, rate
+            except Exception as e:
+                print(f"[mouth] Mac voice failed ({e}) — dropping to the Piper voice.")
+            self.use_mac = False
 
         if not self.use_piper:
             return None, 0

@@ -18,12 +18,13 @@
     "compute_type": "int8"
   },
 
-  "_tts": "engine is 'piper' (works on any machine) or 'kokoro' (better, needs a working NVIDIA card). Kokoro speaks English only. A Piper voice is always installed as well, so a broken graphics driver leaves you with a slightly plainer voice rather than a silent one.",
+  "_tts": "engine is 'piper' (works on any machine), 'kokoro' (better, needs a working NVIDIA card) or 'mac' (the Mac's own voice, named in mac_voice; empty means the system default). Kokoro speaks English only. A Piper voice is always installed as well, so a broken graphics driver leaves you with a slightly plainer voice rather than a silent one.",
   "tts": {
     "engine": "piper",
     "piper_model": "voices/en_GB-alan-medium.onnx",
     "kokoro_voice": "bm_lewis",
     "kokoro_device": "cuda",
+    "mac_voice": "",
     "fallback": "sapi"
   },
 
