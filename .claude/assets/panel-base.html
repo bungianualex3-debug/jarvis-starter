@@ -93,9 +93,12 @@
      the ring would be. They are filmed on black, so `screen` lays the figure
      on the sky with no rectangle around it. */
   #presence.android {
-    width: auto; height: min(76vh, calc(23vw * 16 / 9)); aspect-ratio: 9 / 16;
-    top: 52%; mix-blend-mode: screen;
+    width: auto; height: min(90vh, calc(28vw * 16 / 9)); aspect-ratio: 9 / 16;
+    top: 53.5%; mix-blend-mode: screen;
   }
+  /* the figure fills the middle of its clip, so the stage can start a little
+     inside the clip's right edge */
+  body.android #stageWrap { left: calc(var(--edge) + min(28vw, 90vh * 9 / 16) + 1vw); }
   #presence video {
     position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
     opacity: 0;
