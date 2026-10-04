@@ -103,3 +103,9 @@ In plain terms:
 This was given away on purpose. The only thing being asked in return is that nobody takes it wholesale and puts a price tag on it.
 
 Full text in [LICENSE](LICENSE).
+
+### One exception: the android
+
+The white android in `.claude/assets/android/` is this project's own character, and he is **not** covered by the licence above. He is included so your own assistant can wear him. You may not use him, his image or his clips to present, promote or sell anything else, or to make something look like it comes from this project. The exact terms are in [`.claude/assets/android/NOTICE.md`](.claude/assets/android/NOTICE.md).
+
+Want a look that's yours? Pick the ring, the orb or the bar instead, or describe your own.

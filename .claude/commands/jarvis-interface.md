@@ -62,6 +62,8 @@ Copy `.claude/assets/panel-base.html` into the vault root as `interface.html`. *
 
 **If they took the android, also copy the whole `.claude/assets/android/` folder into the vault root as `android/`** — three small clips, about a megabyte each. Without them the panel falls back to the ring on its own, so a forgotten copy looks like a different design rather than like a fault. Check the folder is there.
 
+**Copy `NOTICE.md` along with the clips, and say what it means in one line:** the android is the project's own character — theirs to use on their own assistant, not to put on anything else they make or sell. The rest of the vault is theirs without conditions; this is the one thing in it that isn't.
+
 Then edit **only the `CONFIG` block at the top** — these lines, leave the rest of it as it is:
 
 ```js
