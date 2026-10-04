@@ -33,7 +33,7 @@
     -webkit-font-smoothing: antialiased;
   }
   canvas { display: block; position: fixed; inset: 0; z-index: 0; }
-  button, input { font: inherit; color: inherit; }
+  button, input, textarea { font: inherit; color: inherit; }
   button { background: none; border: 0; cursor: pointer; }
   ul { list-style: none; }
   .lbl { font-size: 0.74em; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-dim); }
@@ -115,7 +115,10 @@
     position: fixed; z-index: 2;
     left: calc(var(--edge) + clamp(200px, 23vw, 460px) + 3vw);
     right: calc(var(--edge) + 9vw);
-    top: 15vh; bottom: 25vh;
+    /* the conversation rises from the bottom over the same columns, so the
+       stage ends where the conversation begins — never underneath it.
+       --chat-h is the conversation's real height, measured in the script. */
+    top: 15vh; bottom: max(25vh, calc(var(--chat-h, 0px) + 2.5vh));
     display: flex; flex-direction: column;
     transition: right 420ms cubic-bezier(0.2, 0.7, 0.1, 1);
   }
@@ -235,6 +238,10 @@
   }
   #noteIn::placeholder, #chatin::placeholder { color: rgba(255, 255, 255, 0.28); letter-spacing: 0.04em; }
   #noteIn:focus, #chatin:focus { border-color: var(--accent-soft); background: rgba(8, 10, 14, 0.85); box-shadow: 0 0 18px var(--accent-ghost); }
+  /* the message box grows a line at a time, so everything typed stays in
+     view; past a third of the screen it scrolls instead */
+  #chatin { display: block; resize: none; line-height: 1.45; max-height: 34vh; overflow-y: auto; scrollbar-width: none; }
+  #chatin::-webkit-scrollbar { display: none; }
   #noteMsg, #chatnote { margin-top: 0.6em; min-height: 1.2em; font-size: 0.85em; letter-spacing: 0.06em; color: var(--accent); opacity: 0; transition: opacity 350ms ease; }
   #noteMsg.on, #chatnote.on { opacity: 0.85; }
   #noteHint { margin-top: 1.2em; color: var(--ink-dim); line-height: 1.5; }
@@ -364,7 +371,7 @@
   <span id="chatLbl" hidden></span>
   <div id="log"></div>
   <div id="quick"></div>
-  <input id="chatin" type="text" maxlength="2000" spellcheck="false" autocomplete="off">
+  <textarea id="chatin" rows="1" maxlength="2000" spellcheck="false" autocomplete="off"></textarea>
   <div id="chatnote"></div>
 </div>
 <div id="notice"></div>
@@ -1268,7 +1275,23 @@ const chat = (() => {
   root.addEventListener('mouseenter', () => { hovering = true; wake(4000); });
   root.addEventListener('mouseleave', () => { hovering = false; });
   input.addEventListener('focus', () => wake());
-  input.addEventListener('input', () => wake());
+  input.addEventListener('input', () => { wake(); fit(); });
+
+  /* the box is as tall as what is in it (the CSS caps it and scrolls) */
+  function fit() {
+    input.style.height = 'auto';
+    input.style.height = (input.scrollHeight + 2) + 'px';
+  }
+  fit();
+
+  /* tell the stage how much of the bottom the conversation is using, so
+     the two never share the same patch of screen */
+  function measure() {
+    const h = Math.max(0, window.innerHeight - root.getBoundingClientRect().top);
+    document.body.style.setProperty('--chat-h', Math.round(h) + 'px');
+  }
+  new ResizeObserver(measure).observe(root);
+  window.addEventListener('resize', measure);
   function tick() {        // called once a second from the chrome timer
     if (performance.now() > awakeUntil && !hovering && document.activeElement !== input && !input.value) {
       root.classList.remove('awake');
@@ -1342,6 +1365,7 @@ const chat = (() => {
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
+    fit();
     const el = bubble('user', text);
     el.classList.add('pending');
     log.appendChild(el);
@@ -1363,7 +1387,8 @@ const chat = (() => {
     }
   }
   input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); send(); }
+    /* Enter sends; Shift+Enter starts a new line */
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     e.stopPropagation();       // typing must never trigger page-level keys
   });
 
