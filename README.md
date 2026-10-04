@@ -12,6 +12,7 @@ Four commands. The first interviews you and builds your whole memory system from
 
 - **Claude Code** — runs on your existing Claude subscription.
 - **Python 3.10+** — only for the voice. Skip it if you just want memory and a face.
+- **Windows or macOS.** Windows is the long-tested path. macOS support is newer: the memory and the face are the same files, and the voice runs on the processor with the Piper voice.
 - **Obsidian** *(optional)* — free, and only a viewer. It makes the folder pleasant to look at and shows how your notes connect. The files are the real thing; Obsidian just reads them.
 
 ## Getting started

@@ -4,9 +4,15 @@ Hold the key, talk, let go. Nothing is recorded while the key is up, which is
 the whole point: no always-on microphone, and it works in a noisy room or with
 other people around.
 
-Runs in an ordinary console process — no admin rights and no OS permission
-prompt. (Microphone access for desktop apps still has to be allowed under
-Settings > Privacy & security > Microphone.)
+On Windows this runs in an ordinary console process — no admin rights and no
+OS permission prompt. (Microphone access for desktop apps still has to be
+allowed under Settings > Privacy & security > Microphone.)
+
+On a Mac the system has to be told that the app running this — normally
+Terminal — may watch the keyboard: System Settings > Privacy & Security >
+Accessibility AND Input Monitoring. Without that macOS raises no error at all;
+the listener starts and simply never sees a key. `start()` checks for exactly
+that and refuses loudly instead of leaving a deaf assistant that looks fine.
 
 CRITICAL — the bug this file exists to avoid: Windows fires `on_press`
 repeatedly while a key is held down. Without a held flag, every one of those
@@ -19,6 +25,7 @@ and the caller falls back to a simpler input method rather than failing.
 
 from __future__ import annotations
 
+import sys
 import threading
 import time
 
@@ -45,15 +52,24 @@ if AVAILABLE:
 
 MIN_HOLD_SECONDS = 0.25                # taps shorter than this are ignored
 
+# A MacBook keyboard has no right Ctrl, so the default there is right Option.
+DEFAULT_KEY = "right_alt" if sys.platform == "darwin" else "right_ctrl"
+
+MAC_PERMISSION_HELP = (
+    "macOS is not letting this app watch the keyboard. Open System Settings > "
+    "Privacy & Security, add Terminal under both Accessibility and Input "
+    "Monitoring, then quit Terminal completely and start again"
+)
+
 
 class PushToTalk:
     """Watches one key. `wait_for_press()` blocks until it goes down;
     `is_held()` is true for as long as it stays down."""
 
-    def __init__(self, key_name: str = "right_ctrl"):
+    def __init__(self, key_name: str = DEFAULT_KEY):
         if not AVAILABLE:
             raise RuntimeError("pynput is not available")
-        self.key_name = key_name if key_name in KEYS else "right_ctrl"
+        self.key_name = key_name if key_name in KEYS else DEFAULT_KEY
         self._key = KEYS[self.key_name]
         self._held = False             # the key-repeat filter — see module docstring
         self._down_at = 0.0
@@ -69,6 +85,11 @@ class PushToTalk:
         self._listener.daemon = True
         self._listener.start()
         self._listener.wait()          # raises if the hook could not be installed
+        # macOS: an untrusted process gets a listener that never fires. pynput
+        # records whether the system trusts us; no attribute means not a Mac.
+        if sys.platform == "darwin" and getattr(self._listener, "IS_TRUSTED", True) is False:
+            self.stop()
+            raise RuntimeError(MAC_PERMISSION_HELP)
 
     def stop(self) -> None:
         if self._listener is not None:

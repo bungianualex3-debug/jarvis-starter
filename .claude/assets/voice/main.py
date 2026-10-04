@@ -8,7 +8,8 @@ This folder lives INSIDE the vault. The vault above it is the memory, and the
 brain is run from there, so the spoken assistant and the typed one are the same
 assistant reading the same boot file.
 
-Hold-to-talk: hold a key (right Ctrl by default), talk, let go. Nothing is
+Hold-to-talk: hold a key (right Ctrl by default, right Option on a Mac), talk,
+let go. Nothing is
 recorded while the key is up — no always-on microphone. If the key listener
 can't start on this machine it falls back to press-Enter, so the assistant
 still works rather than refusing to run.
@@ -24,7 +25,6 @@ import threading
 import time
 from pathlib import Path
 
-import msvcrt
 import numpy as np
 import sounddevice as sd
 
@@ -35,6 +35,11 @@ from stt import Ears, SAMPLE_RATE
 from brain import Brain
 from mouth import Mouth
 from medic import Medic
+
+try:
+    import msvcrt                    # Windows only
+except ImportError:
+    msvcrt = None                    # macOS and Linux: see flush_typed_keys()
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -66,6 +71,20 @@ def inherited_boot_file(start: Path):
     return None
 
 
+def flush_typed_keys() -> None:
+    """Drop keystrokes already sitting in the console, so a stray one typed
+    earlier doesn't end the recording the instant it starts."""
+    if msvcrt is not None:
+        while msvcrt.kbhit():
+            msvcrt.getch()
+        return
+    try:
+        import termios
+        termios.tcflush(sys.stdin, termios.TCIFLUSH)
+    except Exception:
+        pass                         # no terminal attached; nothing to flush
+
+
 def record_audio() -> np.ndarray:
     frames = []
 
@@ -77,8 +96,7 @@ def record_audio() -> np.ndarray:
     )
     stream.start()
     t0 = time.time()
-    while msvcrt.kbhit():  # flush any queued keystrokes so we don't stop early
-        msvcrt.getch()
+    flush_typed_keys()
     input("Recording... press Enter to stop.")
     stream.stop()
     stream.close()
@@ -157,7 +175,7 @@ def start_typing_in_the_console(typed_q: "queue.Queue") -> None:
 
 def start_push_to_talk(cfg):
     """Returns a started PushToTalk, or None if this machine can't do it."""
-    key = cfg.get("ptt", {}).get("key", "right_ctrl")
+    key = cfg.get("ptt", {}).get("key") or ptt.DEFAULT_KEY
     if not ptt.AVAILABLE:
         print("[ptt] key listener unavailable — using press-Enter instead.")
         return None

@@ -1,6 +1,6 @@
 """Proves the hold-to-talk key listener works, without starting the assistant.
 
-    python ptt-test.py            # right Ctrl
+    python ptt-test.py            # right Ctrl (right Option on a Mac)
     python ptt-test.py f9         # any key name from ptt.KEYS
 
 Deliberately isolated: no Whisper, no microphone, no model loading. If this
@@ -16,14 +16,18 @@ import time
 
 import ptt
 
-key = sys.argv[1] if len(sys.argv) > 1 else "right_ctrl"
+key = sys.argv[1] if len(sys.argv) > 1 else ptt.DEFAULT_KEY
 
 if not ptt.AVAILABLE:
     print("pynput is not installed — hold-to-talk can't run on this machine.")
     raise SystemExit(1)
 
 talk = ptt.PushToTalk(key)
-talk.start()
+try:
+    talk.start()
+except RuntimeError as e:
+    print(f"The key listener could not start: {e}.")
+    raise SystemExit(1)
 
 print(f"Listening for: {talk.key_name.replace('_', ' ')}")
 print("Hold it, count to two, let go. Do it a few times. Ctrl+C to stop.\n")

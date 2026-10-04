@@ -129,7 +129,11 @@ What they do, so you can explain it accurately:
 
 **The desktop shortcuts are not made here.** They happen in Stage 4, after they've seen the buttons work — see *Ask about the desktop shortcuts* below. Don't do it early and don't skip it.
 
-**On macOS or Linux**, write the equivalent yourself — a `.command` file they can double-click on macOS, a `.desktop` entry on Linux — using the browser's `--kiosk` and `--user-data-dir` flags the same way. **Tell them plainly that the Windows launchers are the tested pair and theirs is newer**, so if it misbehaves it's the launcher, not their vault.
+**On macOS.** Copy both files from `.claude/assets/launcher-mac/` into the vault root, renamed in their language the same way (`Start.command` → e.g. `Porneste Jarvis.command`). Then, on the two copies, run `chmod +x` and `xattr -d com.apple.quarantine` (ignore the error if there is no such attribute) — a file that arrived in a downloaded ZIP is otherwise refused on double-click as "from an unidentified developer". Translate only the `echo` lines. They do the same job as the Windows pair: Chrome, then Edge, then Brave, in a throwaway profile, fullscreen; with none of those installed it opens the default browser and says to press Ctrl+Cmd+F. Double-clicking a `.command` file opens a Terminal window alongside — that is normal, say so before they see it.
+
+**Tell them plainly that the Windows launchers are the long-tested pair and the Mac pair is newer**, so if it misbehaves it's the launcher, not their vault.
+
+**On Linux**, write the equivalent yourself — a `.desktop` entry — using the browser's `--kiosk` and `--user-data-dir` flags the same way, and say it is untested.
 
 **Leave the voice hooks alone.** Both files have a marked section near the bottom where the voice command will add its start and stop lines later. That's how one button ends up starting everything.
 
@@ -163,7 +167,7 @@ Now that they've used the buttons, ask — as a real question, and wait for the 
 
 > Want these two as shortcuts on your desktop, so you never open a folder for this again?
 
-If yes:
+If yes, on macOS: make two aliases on the desktop with `ln -s "<vault>/<Start file>.command" ~/Desktop/` and the same for Stop. On Windows:
 
 ```
 powershell -NoProfile -ExecutionPolicy Bypass -File ".claude/assets/launcher-windows/make-shortcuts.ps1" -VaultPath "<vault>" -Name "<assistant>"

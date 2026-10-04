@@ -4,7 +4,8 @@ Three rungs, best first, each one catching the one above it:
 
     Kokoro (only on a machine with a working graphics card)
       -> Piper (a real neural voice, offline, free — the floor everywhere)
-        -> Windows SAPI via pyttsx3, so it can always speak somehow.
+        -> the system voice via pyttsx3 (SAPI on Windows, the built-in voice
+           on a Mac), so it can always speak somehow.
 
 Kokoro runs INSIDE this process rather than as a separate server. That is
 deliberate: no second thing to start, no port to collide with whatever else is
@@ -30,6 +31,7 @@ standing still while the speakers catch up.
 
 from __future__ import annotations
 
+import os
 import queue
 import subprocess
 import tempfile
@@ -54,7 +56,12 @@ class Mouth:
     def __init__(self, cfg, box_dir: Path):
         tts = cfg.get("tts", {})
         self.box_dir = box_dir
-        self.piper_exe = box_dir / ".venv" / "Scripts" / "piper.exe"
+        # a virtual environment keeps its programs in Scripts\ on Windows and
+        # in bin/ everywhere else
+        if os.name == "nt":
+            self.piper_exe = box_dir / ".venv" / "Scripts" / "piper.exe"
+        else:
+            self.piper_exe = box_dir / ".venv" / "bin" / "piper"
         self.model = box_dir / tts.get("piper_model", "")
         self.use_piper = self.piper_exe.exists() and self.model.exists()
         self._sapi = None

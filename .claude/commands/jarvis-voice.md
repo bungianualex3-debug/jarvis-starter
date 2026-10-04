@@ -18,7 +18,7 @@ Three checks, in order. Any failure: say it in one line and stop.
 
 1. **`CLAUDE.md` in the current folder.** No file, no vault — tell them to run `/jarvis` first.
 2. **No `CLAUDE.md` in any folder above.** If there is one, Claude Code reads it on the way up, so the voice would answer as *that* person, with their identity and their files. **Name the file and stop.** This is the fault that looks completely normal while being completely wrong.
-3. **Python 3.10 or newer.** If it's missing, point them at python.org and stop — and tell them to tick **"Add Python to PATH"** in the installer, because that is the step everybody misses.
+3. **Python 3.10 or newer.** If it's missing, point them at python.org and stop — and on Windows tell them to tick **"Add Python to PATH"** in the installer, because that is the step everybody misses. **On a Mac the command is `python3`, not `python`**, and the one Apple ships is often too old or absent: check `python3 --version`, and if it is under 3.10 send them to the macOS installer on python.org. **On an Intel Mac recommend Python 3.12 specifically** — one of the voice's dependencies (`onnxruntime`) stopped publishing Intel Mac builds, and the last one that exists does not cover the very newest Python.
 
 ---
 
@@ -41,6 +41,8 @@ Find out, using whatever works on their OS:
 ### The principle: give them the best their machine can actually run
 
 Not the safest, not the lightest — **the best it can carry.** A voice assistant that mishears you, or makes you wait, doesn't read as modest. It reads as fake, and people close it and never come back. So find out what this machine can do and use it.
+
+**A Mac has no NVIDIA card, so skip the two card sections below**: it is always the CPU column for the hearing and always Piper for the speaking. Say that in one line. An Intel Mac with fewer than 8 cores gets `base`.
 
 ### Check the card isn't already busy
 
@@ -109,7 +111,7 @@ There are two speaking engines, and the machine decides which one is on the tabl
 
 ## Stage 3 — Two questions, one at a time
 
-1. **The talk key.** Hold it to speak, let go when done — nothing is recorded while it's up. Offer **right Ctrl** as the default and say why it's a good one: it's under your right hand and nothing else uses it. Other options: right Alt, right Shift, Caps Lock, F8, F9, Pause.
+1. **The talk key.** Hold it to speak, let go when done — nothing is recorded while it's up. Offer **right Ctrl** as the default and say why it's a good one: it's under your right hand and nothing else uses it. Other options: right Alt, right Shift, Caps Lock, F8, F9, Pause. **On a Mac offer right Option instead** (`right_alt` in the config) — a MacBook keyboard has no right Ctrl and no Pause key, and on a Touch Bar model F8 and F9 are not real keys.
 
 2. **The voice.** Offer only what suits the machine and their language, and describe them by sound rather than by filename:
 
@@ -144,7 +146,7 @@ Then build it. No confirmation step.
 Everything goes in a **`voice` folder inside the vault**. Nothing is installed system-wide and nothing touches anything they already have.
 
 1. **Copy** every file from `.claude/assets/voice/` into `voice/`.
-2. **Make a virtual environment** inside it (`python -m venv .venv`) and install `requirements.txt` into it. Say up front this takes a few minutes and downloads a few hundred megabytes — silence during a long download reads as a hang.
+2. **Make a virtual environment** inside it (`python -m venv .venv`; `python3 -m venv .venv` on a Mac, where the programs then live in `.venv/bin/`, not `.venv\Scripts\`) and install `requirements.txt` into it. Say up front this takes a few minutes and downloads a few hundred megabytes — silence during a long download reads as a hang.
 
    **Only if they chose Kokoro**, install `requirements-kokoro.txt` into the *same* `.venv` afterwards. Warn them first: this one is around 3 GB and can take a long while on a slow line. If it fails, don't fight it — set `"engine": "piper"` in the config, say plainly that the better voice didn't install and the good one did, and carry on. A half-finished torch install is not worth stalling the whole build over.
 
@@ -207,13 +209,31 @@ echo   The voice didn't come up - opening the face in demo mode.
 
 In the **Stop** file, add a line that kills only python processes whose command line contains this vault's `voice` folder — never all Python, which would take out anything else they're running.
 
-If they don't have launchers (they skipped `/jarvis-interface`), say so and tell them `run.bat` starts the voice on its own.
+**On macOS the launchers are `.command` files and the lines are different.** In the **Start** file, replace the voice marker comment with this:
+
+```
+FACEURL="$DIR/voice/.bus/face.url"
+rm -f "$FACEURL"
+nohup "$DIR/voice/run.sh" >"$DIR/voice/voice.log" 2>&1 &
+
+for i in $(seq 1 30); do
+  if [ -s "$FACEURL" ]; then URL="$(cat "$FACEURL")"; break; fi
+  sleep 1
+done
+if [ ! -s "$FACEURL" ]; then echo "  The voice didn't come up - opening the face in demo mode."; fi
+```
+
+and in the **Stop** file add `pkill -f "$DIR/voice/main.py"`. The voice runs in the background there, so what it prints lands in `voice/voice.log` — that file is the first place to look when something is wrong. Make sure `voice/run.sh` is executable (`chmod +x`).
+
+If they don't have launchers (they skipped `/jarvis-interface`), say so and tell them `run.bat` (`run.sh` on a Mac) starts the voice on its own.
 
 ---
 
 ## Stage 6 — Land it
 
-**Prove the key first, on its own.** `python ptt-test.py` inside `voice`, using their key. It loads nothing — no models, no microphone — so it answers in a second, and if the key works, any later problem is provably somewhere else. Have them hold it a few times and read you the numbers.
+**On a Mac, do the permissions before anything else.** macOS will not let a program watch the keyboard until it is allowed to, and it does not complain — the key simply does nothing. Have them open System Settings → Privacy & Security and add **Terminal** under both **Accessibility** and **Input Monitoring**, then quit Terminal completely and reopen it. The first time it records, macOS asks for the **Microphone** on its own; they say yes. Do this now, because an assistant that starts, greets them and then ignores the key is the failure that looks most like a broken install.
+
+**Prove the key first, on its own.** `python ptt-test.py` inside `voice` (on a Mac: `.venv/bin/python ptt-test.py`), using their key. It loads nothing — no models, no microphone — so it answers in a second, and if the key works, any later problem is provably somewhere else. Have them hold it a few times and read you the numbers.
 
 **Then the real thing — started with their button, not by you from a terminal.** This is deliberate: it's the only way to find out whether Stage 5 actually worked. **If the voice doesn't come up when they press Start, the wiring is missing — go back and fix it before doing anything else.** Never work around it by launching `run.bat` yourself; that hides the exact fault you're testing for.
 
@@ -222,7 +242,7 @@ Warn them the first run is slow — the hearing model is being downloaded and lo
 - Hold the key, say something, let go. They should see the face **listening**, then **thinking**, then **speaking**, and hear the answer.
 - Have them **interrupt it**: hold the key while it's mid-sentence. It stops instantly and starts listening again, because someone who interrupts is about to talk.
 
-If nothing is heard: microphone permission first (Windows: Settings → Privacy & security → Microphone → allow desktop apps), then whether another assistant is already listening on that same key. **Two things on one key both fire.**
+If nothing is heard: microphone permission first (Windows: Settings → Privacy & security → Microphone → allow desktop apps; Mac: System Settings → Privacy & Security → Microphone → Terminal), then whether another assistant is already listening on that same key. **Two things on one key both fire.**
 
 ### Write it into their vault
 

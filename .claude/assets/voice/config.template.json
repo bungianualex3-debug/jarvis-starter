@@ -9,6 +9,7 @@
 
   "allow_inherited_boot": false,
 
+  "_ptt": "The key you hold to talk. right_ctrl on Windows; a MacBook has no right Ctrl, so use right_alt (the right Option key) there.",
   "ptt": { "key": "right_ctrl" },
 
   "stt": {

@@ -1,0 +1,4 @@
+# Shell files must keep Unix line endings even when the repository is checked
+# out on Windows, or a Mac refuses to run them.
+*.sh       text eol=lf
+*.command  text eol=lf
