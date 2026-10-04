@@ -130,17 +130,25 @@ def record_while_held(talk) -> np.ndarray:
     return audio
 
 
-def watch_for_barge_in(talk, mouth, brain, state: dict) -> None:
+def watch_for_barge_in(talk, mouth, brain, state: dict, typed_q) -> None:
     """While a turn is running, watch for the talk key going down.
 
     Holding the key mid-reply means one thing: you want it to stop and you are
     about to say something. So cut BOTH ends — the mouth, which is playing, and
     the brain, which may still be writing. Cutting only the mouth leaves it
     thinking into the void and the next answer arrives late and out of step.
+
+    A typed message arriving mid-reply means the same thing: stop, and answer
+    the new one. It stays in the queue; the main loop picks it up next.
     """
     while not state["done"]:
         if talk is not None and talk.is_held():
             state["cut_off"] = True
+            mouth.interrupt()
+            brain.interrupt()
+            return
+        if not typed_q.empty():
+            state["typed_in"] = True
             mouth.interrupt()
             brain.interrupt()
             return
@@ -333,10 +341,10 @@ def main():
                 # Speak each sentence the moment it exists rather than waiting
                 # for the whole reply to be written. Most of the old wait was
                 # silence with a finished thought sitting there unspoken.
-                state = {"done": False, "cut_off": False}
+                state = {"done": False, "cut_off": False, "typed_in": False}
                 watcher = threading.Thread(
                     target=watch_for_barge_in,
-                    args=(talk, mouth, brain, state), daemon=True,
+                    args=(talk, mouth, brain, state, typed_q), daemon=True,
                 )
                 watcher.start()
                 try:
@@ -347,7 +355,8 @@ def main():
 
                     brain.ask(text, speak)
                     # the reply is written; the speakers are still catching up
-                    while mouth.is_speaking and not state["cut_off"]:
+                    while (mouth.is_speaking and not state["cut_off"]
+                           and not state["typed_in"]):
                         time.sleep(0.02)
                 finally:
                     state["done"] = True
@@ -361,6 +370,10 @@ def main():
                     talk.clear_press()
                     signals.set_state(signals.LISTENING)
                     carry_audio = record_while_held(talk)
+                elif state["typed_in"]:
+                    # a typed message cut it off; the loop reads it next
+                    print("(interrupted by a typed message)")
+                    signals.set_state(signals.THINKING)
                 else:
                     signals.set_state(signals.IDLE)
             except Exception as e:
