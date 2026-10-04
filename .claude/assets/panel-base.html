@@ -383,7 +383,7 @@ const CONFIG = {
   size:      0.18,         // only used if the presence card is missing from the page
   showClock: true,
   showState: true,
-  showCaptions: true,
+  showCaptions: false,     // the spoken words under the figure; off, because the conversation already shows them
   showChat:  true,         // the conversation, on the right
   owner:     "",           // their name, for the greeting; empty = no name
   particles: 260,          // how many stars in the sky; 0 turns the sky off
@@ -1448,7 +1448,15 @@ const panel = (() => {
     if (!items.length) { ul.appendChild(el('li', emptyText, 'empty')); return; }
     for (const it of items) ul.appendChild(build(it));
   }
+  /* The live source repeats the same lists ten times a second. Rebuilding
+     them each time restarts every line's entrance, and an open drawer flickers
+     as if it were opening and closing — so a list is only redrawn when it has
+     actually changed. Found on a real install, 2026-10-04. */
+  let waitKey = null, memKey = null;
   function setWaiting(list) {
+    const key = JSON.stringify(list.slice(0, 12));
+    if (key === waitKey) return;
+    waitKey = key;
     data.waiting = list.slice(0, 12);
     $('waitLbl').innerHTML = '';
     $('waitLbl').append(LABELS.waiting, el('i', data.waiting.length ? String(data.waiting.length) : ''));
@@ -1456,6 +1464,9 @@ const panel = (() => {
     $('nWait').textContent = String(data.waiting.length);
   }
   function setMemory(list) {
+    const key = JSON.stringify(list.slice(0, 30));
+    if (key === memKey) return;
+    memKey = key;
     data.memory = list.slice(0, 30);
     $('memLbl').innerHTML = '';
     $('memLbl').append(LABELS.memory, el('i', data.memory.length ? String(data.memory.length) : ''));

@@ -36,7 +36,7 @@ From those two files, take:
 
 ---
 
-## Stage 2 — Four questions, one at a time
+## Stage 2 — Three questions, one at a time
 
 Ask one, stop, wait. Never stack two. Never show the list up front.
 
@@ -46,9 +46,7 @@ Ask one, stop, wait. Never stack two. Never show the list up front.
 
 2. **The colour.** One colour, and everything on screen is built from it — the glow, the lines, the captions. *(A hex code, or just a name — "cold blue", "amber". Convert it to hex yourself.)* **If they took the android, recommend keeping the red it ships with** and say why in one line: the figure glows red in its clips, and a different accent next to it looks like two designs on one screen. It is still their call.
 
-3. **Captions.** Should the words appear on screen as it speaks? Say what it's actually for before they answer: it's the difference between a decoration and something you can use with the sound off.
-
-4. **Where it's going to live.** A spare monitor left on all day, a second window they alt-tab to, or a phone or tablet propped up. This decides how big the shape is and whether the clock earns its place — a screen that's always on wants a clock, a window they open for a minute doesn't.
+3. **Where it's going to live.** A spare monitor left on all day, a second window they alt-tab to, or a phone or tablet propped up. This decides how big the shape is and whether the clock earns its place — a screen that's always on wants a clock, a window they open for a minute doesn't.
 
 That's all. Tell them you're building it, and build it.
 
@@ -71,10 +69,11 @@ Then edit **only the `CONFIG` block at the top** — these lines, leave the rest
   owner:     "…",        // their name, for the greeting
   accent:    "#…",       // their colour, as hex
   presence:  "android",  // or "ring" | "orb" | "bars" if they chose a shape
-  showCaptions: true,
 ```
 
 **Translate the whole `LABELS` block into their language.** It is longer than it used to be — the names of the cards, the four quick buttons, the greeting — and every line of it is text a person reads. Set `locale` to theirs (`"ro-RO"`, `"de-DE"`…) so the date comes out right. The `demoPanel` part is only what the panel plays before anything is connected; translate it too, it is the first thing they will see.
+
+Leave `showCaptions` off. It prints the spoken words under the figure, and the conversation at the bottom already shows every word that is said — the same sentence in two places on one screen reads as a glitch. Turn it on only if they ask for it.
 
 **Don't touch anything below those two blocks.** If they want a different shape, that's the next section, not an edit to the engine.
 
