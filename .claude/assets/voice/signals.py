@@ -87,6 +87,24 @@ def set_state(state: str) -> None:
         _write(force=True)
 
 
+def settle() -> None:
+    """Back to idle, but only if it is still showing `speaking`.
+
+    For speech that happens outside a turn — the greeting at start-up. A turn
+    sets idle itself when it ends; the greeting has nothing after it to do
+    that, so the face would sit in its speaking state until the first real
+    exchange. The check is what makes this safe to call late: if they have
+    already pressed the key, the state is `listening` and is left alone.
+    """
+    with _lock:
+        if _doc["state"] != SPEAKING:
+            return
+        _doc["state"] = IDLE
+        _doc["level"] = 0.0
+        _doc["caption"] = {"text": "", "seq": _doc["caption"]["seq"], "dur": 0.0}
+        _write(force=True)
+
+
 def set_signal(level: float, wave) -> None:
     """Publish how loud it is right now, and the shape of the sound."""
     with _lock:

@@ -268,6 +268,15 @@ def main():
         # cost now, out loud, while the greeting is still playing. By the time
         # anyone has finished listening to it, the session is already warm.
         threading.Thread(target=brain.warmup, daemon=True).start()
+
+        # The greeting is spoken outside any turn, so nothing after it puts
+        # the face back to rest: it stayed in its speaking state until the
+        # first real exchange. Wait for the audio to end, then settle.
+        def rest_after_greeting():
+            time.sleep(0.5)                 # let the first sentence reach the speakers
+            mouth.wait_idle(timeout=180)    # a first Kokoro sentence can be slow
+            signals.settle()
+        threading.Thread(target=rest_after_greeting, daemon=True).start()
     except Exception as e:
         medic.handle(e, "mouth", components)
 
