@@ -88,6 +88,21 @@
     opacity: 0; transition: opacity 260ms ease;
   }
   #cap.on { opacity: 1; }
+
+  /* the android: three small looping clips, one per state, standing where
+     the ring would be. They are filmed on black, so `screen` lays the figure
+     on the sky with no rectangle around it. */
+  #presence.android {
+    width: auto; height: min(76vh, calc(23vw * 16 / 9)); aspect-ratio: 9 / 16;
+    top: 52%; mix-blend-mode: screen;
+  }
+  #presence video {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+    opacity: 0;
+    mask-image: linear-gradient(180deg, #000 82%, transparent 99%);
+    -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent 99%);
+  }
+  body.android #cap { top: auto; bottom: clamp(52px, 9.5vh, 100px); text-shadow: 0 0 12px #000, 0 0 4px #000; }
   #cap .line { font-size: 1.02em; line-height: 1.45; color: var(--ink-dim); text-wrap: balance; }
   #cap .w { transition: color 90ms linear; }
   #cap .w.lit { color: var(--ink); }
@@ -360,7 +375,8 @@
 const CONFIG = {
   name:      "JARVIS",     // shown top-left
   accent:    "#ff4d3d",    // the one colour the whole interface is built from
-  presence:  "ring",       // "ring" | "orb" | "bars"  — the shape in the middle
+  presence:  "android",    // "android" | "ring" | "orb" | "bars"
+  androidPath: "android/", // folder with idle.mp4, thinking.mp4, speaking.mp4
   size:      0.18,         // only used if the presence card is missing from the page
   showClock: true,
   showState: true,
@@ -1717,6 +1733,75 @@ const panel = (() => {
     }, 1500);
   }
 
+  /* ----------------------------------------------------------------
+     THE ANDROID — presence: "android". A figure instead of a shape.
+
+     Three loops, one per state; listening shares the idle one. Each fades
+     with its state's weight, and a clip that is not on screen is paused,
+     so only one is ever being decoded. Everything stops while the page is
+     hidden. The mouth is not in sync with the words — it is a talking loop
+     — so the glow drawn behind the figure follows the real voice level,
+     and that is the part that is truly in time.
+
+     If the clips are missing the built-in ring takes over, exactly as a
+     broken custom shape would.
+  ---------------------------------------------------------------- */
+  const clips = {};
+  function androidOff() {
+    if (CONFIG.presence !== 'android') return;
+    CONFIG.presence = 'ring';
+    for (const k in clips) { clips[k].remove(); delete clips[k]; }
+    $('presence').classList.remove('android');
+    document.body.classList.remove('android');
+    measureSlot();
+  }
+  if (CONFIG.presence === 'android') {
+    $('presence').classList.add('android');
+    document.body.classList.add('android');
+    for (const k of ['idle', 'thinking', 'speaking']) {
+      const v = document.createElement('video');
+      v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto';
+      v.addEventListener('error', androidOff);
+      v.src = CONFIG.androidPath + k + '.mp4';
+      $('presence').appendChild(v);
+      clips[k] = v;
+    }
+  }
+  BUILTIN.android = function (ctx, s) {
+    /* the figure's chest sits above the middle of its box */
+    const cy = s.cy - s.R * 1.25, w = s.w;
+    const glow = 0.10 + 0.16 * w.speaking * (0.4 + s.level) + 0.05 * w.thinking + 0.05 * w.listening;
+    const R = s.R * (2.3 + 0.5 * w.speaking * s.level);
+    const g = ctx.createRadialGradient(s.cx, cy, R * 0.1, s.cx, cy, R);
+    g.addColorStop(0, s.rgba(glow));
+    g.addColorStop(0.5, s.rgba(glow * 0.35));
+    g.addColorStop(1, s.rgba(0));
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(s.cx, cy, R, 0, TAU); ctx.fill();
+    /* listening: rings closing in on the figure, as the ring presence does */
+    if (w.listening > 0.01) {
+      for (let k = 0; k < 2; k++) {
+        const ph = (s.t * 0.55 + k * 0.5) % 1;
+        ctx.beginPath();
+        ctx.arc(s.cx, cy, s.R * (3.2 - ph * 1.6), 0, TAU);
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = s.rgba(w.listening * 0.32 * Math.sin(Math.PI * ph));
+        ctx.stroke();
+      }
+    }
+  };
+  function frame() {
+    if (CONFIG.presence !== 'android') return;
+    const w = st.w;
+    const on = { idle: w.idle + w.listening, thinking: w.thinking, speaking: w.speaking };
+    for (const k in clips) {
+      const v = clips[k], o = clamp(on[k], 0, 1);
+      v.style.opacity = o.toFixed(3);
+      if (o > 0.02 && !document.hidden) { if (v.paused) v.play().catch(() => {}); }
+      else if (!v.paused) v.pause();
+    }
+  }
+
   /* --- once a second: the date line, the layout check, the demo --- */
   function tick() {
     const d = new Date();
@@ -1731,7 +1816,7 @@ const panel = (() => {
 
   setGoal('', false); setWaiting([]); setMemory([]); setActivity('', false);
 
-  return { sync, tick, show };
+  return { sync, tick, show, frame };
 })();
 
 
@@ -1794,6 +1879,7 @@ function frame(now) {
   demoSignal(now);
   setWeights(dt);
   sweepCaption(now);
+  panel.frame();
 
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = '#000';
