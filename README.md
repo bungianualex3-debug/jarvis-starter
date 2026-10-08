@@ -27,7 +27,7 @@ That's it. Everything after this happens in conversation.
 
 ## `/jarvis` — the memory
 
-It asks you nine questions. Answer them honestly, **especially the one about what stalls your work** — that's the answer that makes your rules yours instead of generic. Most people say something tidy and useless there.
+It asks you eight questions. Answer them honestly, **especially the one about what stalls your work** — that's the answer that makes your rules yours instead of generic. Most people say something tidy and useless there.
 
 Then it makes **its own new folder** and builds everything inside it: your boot file, your index, a folder per area of your life each with its own map note, a daily template, and your list of open work. Its own folder, mixed with nothing.
 

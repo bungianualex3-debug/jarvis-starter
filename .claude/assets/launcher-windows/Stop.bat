@@ -21,5 +21,6 @@ powershell -NoProfile -Command ^
 rem ---------------------------------------------------------------- voice
 rem The voice command's stop line goes here.
 
-timeout /t 2 >nul
+rem full path on purpose: a GNU `timeout` earlier on PATH takes other arguments
+"%SystemRoot%\System32\timeout.exe" /t 2 >nul
 exit /b 0

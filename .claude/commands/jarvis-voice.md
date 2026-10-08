@@ -190,7 +190,7 @@ In the **Start** file, replace the voice marker comment with this. It starts the
 ```
 set "FACEURL=%~dp0voice\.bus\face.url"
 del "%FACEURL%" >nul 2>nul
-start "" /min "%~dp0voice\run.bat"
+start "" /min cmd /c ""%~dp0voice\run.bat""
 
 for /l %%i in (1,1,30) do (
   if exist "%FACEURL%" (
@@ -207,7 +207,16 @@ echo   The voice didn't come up - opening the face in demo mode.
 
 **Do not skip the waiting loop, and do not open the browser before this.** Opened as a `file://` page the interface cannot reach the voice's state — its own `/state` address resolves to nothing on disk, so it runs its demo loop forever and never once reacts to a real voice. It looks alive and is not. That is the single most disappointing way this can fail, because everything appears to work.
 
-In the **Stop** file, add a line that kills only python processes whose command line contains this vault's `voice` folder — never all Python, which would take out anything else they're running.
+**Keep the `cmd /c` and the doubled quotes on the `start` line.** `start` on a bare `.bat` opens a console that stays open after the voice is stopped, so every Stop leaves a minimised window behind. With `cmd /c` the window closes when the voice does. Found on a real run, 2026-10-08.
+
+In the **Stop** file, replace the voice marker comment with this. It kills only python processes whose command line contains this vault's `voice` folder — never all Python, which would take out anything else they're running:
+
+```
+set "VOICEDIR=%~dp0voice"
+powershell -NoProfile -Command ^
+  "$mark = $env:VOICEDIR;" ^
+  "Get-CimInstance Win32_Process -Filter \"Name='python.exe' or Name='pythonw.exe'\" | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($mark) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
+```
 
 **On macOS the launchers are `.command` files and the lines are different.** In the **Start** file, replace the voice marker comment with this:
 
@@ -269,7 +278,7 @@ Then stop.
 
 ## Before you say you're done
 
-Hearing it answer feels like the end. It isn't. **Check all six by actually looking — open the folder, read the file. Do not check them from memory of what you intended to do.**
+Hearing it answer feels like the end. It isn't. **Check all eight by actually looking — open the folder, read the file. Do not check them from memory of what you intended to do.**
 
 1. `voice/` exists with its own `.venv`.
 2. `voice/voices/` contains a file **over a megabyte**, and `config.json`'s `piper_model` reads `voices/<name>.onnx` — **a relative path inside the vault.** If it points anywhere else on the machine, either fix it, or make sure the index says the vault only works on this computer.

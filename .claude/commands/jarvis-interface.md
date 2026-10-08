@@ -209,7 +209,7 @@ Then stop. Don't offer a list of next steps.
 
 ## Before you say you're done
 
-A working interface on screen feels like the finish line. It isn't, and this is the exact point where these last steps get quietly dropped — **they have been dropped in real runs.** Check all four. If any is false, go and do it now.
+A working interface on screen feels like the finish line. It isn't, and this is the exact point where these last steps get quietly dropped — **they have been dropped in real runs.** Check all six. If any is false, go and do it now.
 
 1. `interface.html` exists in the vault root and they have **seen it running**.
 2. The two launcher files exist in the vault root, named in their language, and they have **opened it with Start and closed it with Stop at least once**.
