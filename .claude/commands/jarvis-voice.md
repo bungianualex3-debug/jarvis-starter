@@ -151,7 +151,7 @@ Everything goes in a **`voice` folder inside the vault**. Nothing is installed s
    **Only if they chose Kokoro**, install `requirements-kokoro.txt` into the *same* `.venv` afterwards. Warn them first: this one is around 3 GB and can take a long while on a slow line. If it fails, don't fight it — set `"engine": "piper"` in the config, say plainly that the better voice didn't install and the good one did, and carry on. A half-finished torch install is not worth stalling the whole build over.
 
    Kokoro fetches its own voice model the first time it speaks, so the first sentence after a Kokoro install is slow once and never again. Tell them, or it reads as a hang.
-3. **Write `voice/config.json`** from `config.template.json`: their language, their key, the model tier you chose in Stage 2, and the voice they picked.
+3. **Write `voice/config.json`** from `config.template.json`: their language, their key, the model tier you chose in Stage 2, and the voice they picked. **Write `greeting` too, in their language** — one short sentence that says it is online and which key to hold, with `{owner}` and `{name}` where the names go (in Romanian, for example: `Salut {owner}, {name} e aici. Ține apăsat Ctrl dreapta și vorbește.`). Left empty it greets in English, and an English sentence read by a voice of another language is the first thing they would hear.
 4. **Download the voice** into `voice/voices/` — two files per voice, the model and its `.json`:
 
    ```

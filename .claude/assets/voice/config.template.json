@@ -7,6 +7,9 @@
 
   "reply_language": "",
 
+  "_greeting": "The first thing it says out loud when it starts, written in their language. {owner} and {name} are filled in from the two names above. Say which key to hold, in words. Leave it empty and it greets in English.",
+  "greeting": "",
+
   "allow_inherited_boot": false,
 
   "_ptt": "The key you hold to talk. right_ctrl on Windows; a MacBook has no right Ctrl, so use right_alt (the right Option key) there.",

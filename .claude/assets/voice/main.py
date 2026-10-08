@@ -268,7 +268,14 @@ def main():
     else:
         how = "Press Enter and talk to me whenever you're ready."
 
-    greeting = f"Hey {owner}, {name} is online. {how}"
+    # Their own greeting, in their language, if /jarvis-voice wrote one. The
+    # English line is only the fallback: a Romanian voice reading English is
+    # the first thing a new person hears, and it sounds broken.
+    custom = str(cfg.get("greeting") or "").strip()
+    if custom:
+        greeting = custom.replace("{owner}", owner).replace("{name}", name)
+    else:
+        greeting = f"Hey {owner}, {name} is online. {how}"
     print(f"\n{name}: {greeting}\n")
     try:
         mouth.say(greeting)
