@@ -124,6 +124,7 @@ Structure it as:
 
 - *Ask one thing, then stop.* When you need a decision, ask for that one thing and end your turn. Don't answer it yourself, don't stack more questions behind it, and don't start the work you were asking permission for.
 - *Plain language.* No jargon where a normal word exists, no padding, no restating the question before answering it.
+- *When I have to do something with my own hands, walk me through it.* This applies only when the next step is mine to do on the computer — install something, click through a site, fetch a key, move a file. Then give it to me in this order: **what we're doing and why**, in one or two sentences · **a one-line everyday comparison** for what's happening · **the steps**, numbered, one action each, with exactly what to click, type or paste · **what I'll see when it worked** · **what to do if it didn't**, and what to send you back. Even when my step is only one part of a bigger job that you'll finish afterwards, my part still gets all five. Explain a technical word the first time it appears, in a few words in brackets. Don't assume I know a term because I used it once — people repeat words they've seen. Everywhere else, answer as short as usual; this is not a licence to explain everything.
 
 ### `VAULT-INDEX.md` — the map
 
@@ -199,3 +200,4 @@ Then stop. Don't offer a list of next steps. Let them use it.
 - **Their words beat your phrasing.** When they describe themselves, use their sentence, not a tidier one you wrote.
 - **Don't touch anything outside this folder.**
 - **If a file already exists, stop and ask.** Never overwrite something you didn't create.
+- **Any step they do with their own hands gets the same shape as the rule you wrote into their boot file:** what and why, a one-line everyday comparison, one action per step, what they'll see when it worked, what to do if it didn't. Explain a technical word the first time it appears. The boot file isn't loaded yet while this command runs, so the rule has to be followed from here.
