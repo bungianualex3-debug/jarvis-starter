@@ -2,7 +2,7 @@
 
 Your AI forgets everything the moment you close it. This fixes that — and then gives it a face and a voice.
 
-Four commands. The first interviews you and builds your whole memory system from nothing. The second gives it a body and a panel you can work in. The third lets you talk to it out loud. The fourth keeps all three healthy.
+Five commands. The first interviews you and builds your whole memory system from nothing. The second gives it a body and a panel you can work in. The third lets you talk to it out loud. The fourth keeps all three healthy. The fifth edits your videos.
 
 **No API key. Nothing metered.** If you already pay for Claude, you already have everything you need.
 
@@ -11,7 +11,8 @@ Four commands. The first interviews you and builds your whole memory system from
 ## What you need
 
 - **Claude Code** — runs on your existing Claude subscription.
-- **Python 3.10+** — only for the voice. Skip it if you just want memory and a face.
+- **Python 3.10+** — only for the voice and the video editor. Skip it if you just want memory and a face.
+- **Node 18+ and ffmpeg** — only for the video editor (`/jarvis-edit`).
 - **Windows or macOS.** Windows is the long-tested path. macOS support is newer: the memory and the face are the same files, and the voice runs on the processor with the Piper voice.
 - **Obsidian** *(optional)* — free, and only a viewer. It makes the folder pleasant to look at and shows how your notes connect. The files are the real thing; Obsidian just reads them.
 
@@ -74,6 +75,21 @@ Your assistant also repairs itself while it runs, within a deliberate limit. Saf
 `/jarvis-check` reads those notes-to-self, so nothing it reported quietly sits there unread.
 
 Plain files don't crash, they *drift*: an index stops matching its folder, a link points at a note that got renamed, a folder appears with no entry on the map. Nothing looks broken, which is exactly why it's worth checking.
+
+## `/jarvis-edit` — editing your videos
+
+This is the one from the launch video: **20 effects, one take, no editor.** Hand it a raw take from your phone and it:
+- cuts the pauses and the retakes
+- adds the effects you pick
+- puts captions on every word, synced to your voice
+- gives every effect its own sound
+- sets the loudness for TikTok, Reels or Shorts
+
+There's no editing software. It writes the edit as code with [Remotion](https://www.remotion.dev) and renders it. You watch, say what feels off ("this comes in too early"), and it measures, fixes and renders again.
+
+Everything runs on your machine. Needs **Node 18+**, **ffmpeg** and **Python 3.10+**. The cut-out effects (green screen, the person popping out of the frame) also need PyTorch, and they're much faster with an NVIDIA card. Remotion is free for individuals and companies of up to 3 people, and bigger companies need [its licence](https://www.remotion.dev/license). The pipeline and the reference composition are in [`.claude/assets/editor/`](.claude/assets/editor/).
+
+Your footage, your face and your voice stay in your own project folder. Nothing gets uploaded.
 
 ## What you end up with
 

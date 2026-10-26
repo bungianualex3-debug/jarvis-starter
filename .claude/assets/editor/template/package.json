@@ -1,0 +1,21 @@
+{
+  "name": "jarvis-editor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Launch out/video.mp4 --concurrency=3 --timeout=300000"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.506",
+    "@remotion/cli": "4.0.506",
+    "@remotion/renderer": "4.0.506",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.506"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
